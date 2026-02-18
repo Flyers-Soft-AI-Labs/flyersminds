@@ -1,15 +1,14 @@
 import React from 'react';
 
-export const Checkbox = ({ 
-  id, 
-  checked = false, 
-  onChange, 
+export const Checkbox = ({
+  id,
+  checked = false,
+  onChange,
   onCheckedChange,
-  className = '', 
+  className = '',
   disabled = false,
-  ...props 
+  ...props
 }) => {
-  // Handle both onChange and onCheckedChange for compatibility
   const handleChange = (e) => {
     const isChecked = e.target.checked;
     if (onChange) {
@@ -27,7 +26,7 @@ export const Checkbox = ({
       checked={checked}
       onChange={handleChange}
       disabled={disabled}
-      className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`h-4 w-4 cursor-pointer rounded-md border border-[#aebdb3] accent-[#0f766e] focus:outline-none focus:ring-2 focus:ring-[#0f766e]/25 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     />
   );

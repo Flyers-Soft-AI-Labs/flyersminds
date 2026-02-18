@@ -1,123 +1,140 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Light Mode (Day) Theme */
+    --background: 210 40% 98%;
+    /* slate-50 */
+    --foreground: 222 47% 11%;
+    /* slate-900 */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* white */
+    --card-foreground: 222 47% 11%;
+    /* slate-900 */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    /* white */
+    --popover-foreground: 222 47% 11%;
+    /* slate-900 */
+    --primary: 199 89% 48%;
+    /* cyan-500 */
     --primary-foreground: 210 40% 98%;
+    /* slate-50 */
     --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* slate-100 */
+    --secondary-foreground: 222 47% 11%;
+    /* slate-900 */
     --muted: 210 40% 96.1%;
+    /* slate-100 */
     --muted-foreground: 215.4 16.3% 46.9%;
+    /* slate-500 */
     --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* slate-100 */
+    --accent-foreground: 222 47% 11%;
+    /* slate-900 */
     --destructive: 0 84.2% 60.2%;
+    /* red-500 */
     --destructive-foreground: 210 40% 98%;
+    /* slate-50 */
     --border: 214.3 31.8% 91.4%;
+    /* slate-200 */
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    /* slate-200 */
+    --ring: 199 89% 48%;
+    /* cyan-500 */
+    --radius: 0.75rem;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border;
+  .dark {
+    /* Nebula Theme - Dark Mode Base */
+    --background: 222 47% 11%;
+    /* slate-900 (custom #0f172a) */
+    --foreground: 210 40% 98%;
+    /* slate-50 */
+    --card: 222 47% 11%;
+    /* slate-900 */
+    --card-foreground: 210 40% 98%;
+    /* slate-50 */
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 199 89% 48%;
+    /* cyan-500 */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217 33% 17%;
+    /* slate-800 */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    /* slate-800 */
+    --muted-foreground: 215 20% 65%;
+    /* slate-400 */
+    --accent: 262 83% 58%;
+    /* purple-500 */
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    /* red-900 */
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    /* slate-800 */
+    --input: 217 33% 17%;
+    /* slate-800 */
+    --ring: 199 89% 48%;
+    /* cyan-500 */
   }
+
+  /* Force background transition and default styles */
+  html,
+  body,
+  #root {
+    @apply text-foreground transition-colors duration-300;
+    min-height: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply antialiased selection:bg-cyan-500/30 selection:text-cyan-700 dark:selection:text-cyan-200;
+    font-family: "Inter", sans-serif;
   }
 }
 
 @layer utilities {
   .font-heading {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-weight: 600;
+    font-family: "Outfit", sans-serif;
   }
-  
-  .animate-fade-in {
-    animation: fadeIn 0.2s ease-in;
+
+  .font-body {
+    font-family: "Inter", sans-serif;
   }
-  
-  .animate-slide-in-up {
-    animation: slideInUp 0.3s ease-out;
+
+  .font-mono {
+    font-family: "JetBrains Mono", monospace;
   }
-  
-  .animate-slide-in-right {
-    animation: slideInRight 0.3s ease-out;
+
+  /* Glassmorphism Utilities */
+  .glass-panel {
+    @apply bg-white/70 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-xl;
   }
-  
-  .animate-fade-in-up {
-    animation: fadeInUp 0.3s ease-out;
+
+  .glass-card {
+    @apply bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200 dark:border-white/5 transition-colors duration-300;
   }
-  
-  .animate-pulse-glow {
-    animation: pulseGlow 2s ease-in-out infinite;
-  }
-  
+
   .card-hover {
-    transition: all 0.2s ease;
+    @apply transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-500/10;
   }
-  
-  .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  /* Improved Mesh Background */
+  .mesh-bg {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.05), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.05), transparent 25%);
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+.dark .mesh-bg {
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.15), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%);
 }

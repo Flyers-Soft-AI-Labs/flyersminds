@@ -1,25 +1,24 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "../App";
-import axios from "axios";
-import Navbar from "../components/Navbar";
-import { curriculum } from "../data/curriculum";
-import { Progress } from "../components/ui/progress";
-import { Badge } from "../components/ui/badge";
-import { Separator } from "../components/ui/separator";
-import {
-  Users, ChevronDown, ChevronUp, Search, Calendar, TrendingUp
-} from "lucide-react";
-import { Input } from "../components/ui/input";
+import { useState, useEffect } from 'react';
+import { useAuth } from '../App';
+import axios from 'axios';
+import Navbar from '../components/Navbar';
+import { curriculum } from '../data/curriculum';
+import { Progress } from '../components/ui/progress';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
+import { Users, ChevronDown, ChevronUp, Search, Calendar, TrendingUp, Sparkles } from 'lucide-react';
+import { Input } from '../components/ui/input';
 
 export default function AdminDashboard() {
   const { token, API } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedUser, setExpandedUser] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchUsers = async () => {
@@ -29,125 +28,122 @@ export default function AdminDashboard() {
       });
       setUsers(res.data);
     } catch (err) {
-      console.error("Failed to fetch users", err);
+      console.error('Failed to fetch users', err);
     } finally {
       setLoading(false);
     }
   };
 
   const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (user) =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getUserDayStatus = (user, dayNum) => {
-    const p = user.progress?.find((pr) => pr.day_number === dayNum);
-    if (p?.is_completed) return "completed";
-    if (p?.completed_tasks?.length > 0) return "in-progress";
-    return "not-started";
+    const progressRecord = user.progress?.find((entry) => entry.day_number === dayNum);
+    if (progressRecord?.is_completed) return 'completed';
+    if (progressRecord?.completed_tasks?.length > 0) return 'in-progress';
+    return 'not-started';
   };
 
+  const activeTodayCount = users.filter((user) => {
+    const lastUpdate = user.progress?.reduce((latest, entry) => {
+      if (!entry.updated_at) return latest;
+      const date = new Date(entry.updated_at);
+      return date > latest ? date : latest;
+    }, new Date(0));
+
+    if (!lastUpdate) return false;
+    const today = new Date();
+    return lastUpdate.toDateString() === today.toDateString();
+  }).length;
+
+  const averageProgress =
+    users.length > 0
+      ? Math.round(users.reduce((sum, user) => sum + (user.completed_days || 0), 0) / users.length / 1.2)
+      : 0;
+
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <div className="mesh-bg min-h-screen pb-12">
       <Navbar />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-heading font-bold text-2xl text-slate-900">
-              Admin Dashboard
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Monitor intern progress across the 6-month curriculum
-            </p>
+      <main className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
+        <section className="surface-panel relative mb-8 overflow-hidden p-6 sm:p-8">
+          <div className="absolute -right-16 -top-10 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(20,184,166,0.28)_0%,transparent_65%)]" />
+
+          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="kicker mb-3">
+                <Sparkles className="h-3.5 w-3.5" />
+                Admin Intelligence
+              </p>
+              <h1 className="font-heading text-3xl font-semibold surface-title sm:text-4xl">Admin Dashboard</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed surface-copy">
+                Monitor intern momentum, identify blockers, and track completion performance across all 120 days.
+              </p>
+            </div>
+
+            <div className="surface-panel-soft inline-flex items-center gap-2 px-4 py-3">
+              <Users className="h-4 w-4 text-[#0f766e]" />
+              <span className="text-sm font-semibold text-[#1f3238]">{users.length} Interns Active</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 bg-violet-50 px-4 py-2 rounded-full">
-            <Users className="w-4 h-4 text-violet-600" />
-            <span className="text-sm font-semibold text-violet-700">
-              {users.length} Interns
-            </span>
+        </section>
+
+        <div data-testid="admin-stats" className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="metric-card p-5">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8f6f2] text-[#0f766e]">
+                <Users className="h-5 w-5" />
+              </div>
+              <span className="text-sm text-[#5f7077]">Total Interns</span>
+            </div>
+            <p className="font-heading text-3xl font-semibold text-[#1a2a31]">{users.length}</p>
+          </div>
+
+          <div className="metric-card p-5">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ecf8ef] text-[#1e8a49]">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <span className="text-sm text-[#5f7077]">Average Progress</span>
+            </div>
+            <p className="font-heading text-3xl font-semibold text-[#1a2a31]">{averageProgress}%</p>
+          </div>
+
+          <div className="metric-card p-5">
+            <div className="mb-2 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8efff] text-[#2f57b6]">
+                <Calendar className="h-5 w-5" />
+              </div>
+              <span className="text-sm text-[#5f7077]">Active Today</span>
+            </div>
+            <p className="font-heading text-3xl font-semibold text-[#1a2a31]">{activeTodayCount}</p>
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div
-          data-testid="admin-stats"
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
-        >
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
-                <Users className="w-5 h-5 text-violet-600" />
-              </div>
-              <span className="text-sm text-slate-500">Total Interns</span>
-            </div>
-            <p className="font-heading font-bold text-3xl text-slate-900">{users.length}</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-emerald-600" />
-              </div>
-              <span className="text-sm text-slate-500">Avg. Progress</span>
-            </div>
-            <p className="font-heading font-bold text-3xl text-slate-900">
-              {users.length > 0
-                ? Math.round(
-                    users.reduce((sum, u) => sum + (u.completed_days || 0), 0) /
-                      users.length /
-                      1.2
-                  )
-                : 0}
-              %
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-blue-600" />
-              </div>
-              <span className="text-sm text-slate-500">Active Today</span>
-            </div>
-            <p className="font-heading font-bold text-3xl text-slate-900">
-              {users.filter((u) => {
-                const lastUpdate = u.progress?.reduce((latest, p) => {
-                  if (!p.updated_at) return latest;
-                  const d = new Date(p.updated_at);
-                  return d > latest ? d : latest;
-                }, new Date(0));
-                if (!lastUpdate) return false;
-                const today = new Date();
-                return lastUpdate.toDateString() === today.toDateString();
-              }).length}
-            </p>
-          </div>
-        </div>
-
-        {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a8a90]" />
             <Input
               data-testid="admin-search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search interns by name or email..."
-              className="pl-10 rounded-xl border-slate-200 bg-white h-10"
+              className="h-11 pl-10"
             />
           </div>
         </div>
 
-        {/* Intern List */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+          <div className="surface-panel flex items-center justify-center py-20">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#b8d8ce] border-t-[#0f766e]" />
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="text-center py-20">
-            <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 font-medium">
-              {searchQuery ? "No interns found matching your search" : "No interns registered yet"}
+          <div className="surface-panel py-16 text-center">
+            <Users className="mx-auto mb-4 h-12 w-12 text-[#9aa8ad]" />
+            <p className="text-sm font-medium text-[#5f7278]">
+              {searchQuery ? 'No interns found matching your search' : 'No interns registered yet'}
             </p>
           </div>
         ) : (
@@ -160,65 +156,66 @@ export default function AdminDashboard() {
                 <div
                   key={user.id}
                   data-testid={`intern-card-${user.id}`}
-                  className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
+                  className="surface-panel overflow-hidden"
                 >
                   <button
                     onClick={() => setExpandedUser(isExpanded ? null : user.id)}
-                    className="w-full px-6 py-4 flex items-center gap-4 text-left hover:bg-slate-50/50 transition-colors"
+                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[#eef7f3] sm:px-6"
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(140deg,#0f766e,#14b8a6)] text-sm font-bold text-white">
                       {user.name?.charAt(0)?.toUpperCase()}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-heading font-semibold text-sm text-slate-900">
-                        {user.name}
-                      </p>
-                      <p className="text-xs text-slate-400">{user.email}</p>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="font-heading text-base font-semibold text-[#1a2a31]">{user.name}</p>
+                      <p className="truncate text-xs text-[#64767d]">{user.email}</p>
                     </div>
+
                     <div className="flex items-center gap-4">
-                      <div className="text-right hidden sm:block">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {user.completed_days || 0}/120 days
-                        </p>
-                        <Progress value={progressPct} className="w-32 h-1.5 mt-1" />
+                      <div className="hidden text-right sm:block">
+                        <p className="text-sm font-semibold text-[#1d3036]">{user.completed_days || 0}/120 days</p>
+                        <Progress value={progressPct} className="mt-1 w-32" />
                       </div>
+
                       <Badge
                         className={`text-xs ${
                           progressPct === 100
-                            ? "bg-emerald-50 text-emerald-700"
+                            ? 'border-[#a6dcb5] bg-[#e9f9ee] text-[#1f8a49]'
                             : progressPct > 0
-                            ? "bg-violet-50 text-violet-700"
-                            : "bg-slate-50 text-slate-500"
+                            ? 'border-[#b8d4cb] bg-[#e8f6f2] text-[#0f766e]'
+                            : 'border-[#d3ddd6] bg-[#f3f6f4] text-[#61747a]'
                         }`}
                       >
                         {progressPct}%
                       </Badge>
+
                       {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-slate-400" />
+                        <ChevronUp className="h-4 w-4 text-[#708289]" />
                       ) : (
-                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                        <ChevronDown className="h-4 w-4 text-[#708289]" />
                       )}
                     </div>
                   </button>
 
                   {isExpanded && (
-                    <div className="border-t border-slate-100 px-6 py-4">
-                      <p className="text-xs font-medium text-slate-500 mb-3">
-                        Day-by-day Progress (120 days)
+                    <div className="border-t border-[#dbe5de] px-5 py-4 sm:px-6">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7279]">
+                        Day-by-day progress (120 days)
                       </p>
+
                       <div className="flex flex-wrap gap-1">
-                        {Array.from({ length: 120 }, (_, i) => i + 1).map((dayNum) => {
+                        {Array.from({ length: 120 }, (_, index) => index + 1).map((dayNum) => {
                           const status = getUserDayStatus(user, dayNum);
                           return (
                             <div
                               key={dayNum}
-                              title={`Day ${dayNum}: ${curriculum.find(d => d.day === dayNum)?.topic || ""} - ${status}`}
-                              className={`w-5 h-5 rounded text-[8px] flex items-center justify-center font-medium cursor-default ${
-                                status === "completed"
-                                  ? "bg-emerald-500 text-white"
-                                  : status === "in-progress"
-                                  ? "bg-amber-400 text-white"
-                                  : "bg-slate-100 text-slate-400"
+                              title={`Day ${dayNum}: ${curriculum.find((day) => day.day === dayNum)?.topic || ''} - ${status}`}
+                              className={`flex h-5 w-5 cursor-default items-center justify-center rounded text-[8px] font-semibold ${
+                                status === 'completed'
+                                  ? 'bg-[#1f8a49] text-white'
+                                  : status === 'in-progress'
+                                  ? 'bg-[#d98814] text-white'
+                                  : 'bg-[#e6ebe8] text-[#8a989d]'
                               }`}
                             >
                               {dayNum}
@@ -226,39 +223,45 @@ export default function AdminDashboard() {
                           );
                         })}
                       </div>
-                      <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
+
+                      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[#61747a]">
                         <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-emerald-500" /> Completed
+                          <div className="h-3 w-3 rounded bg-[#1f8a49]" /> Completed
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-amber-400" /> In Progress
+                          <div className="h-3 w-3 rounded bg-[#d98814]" /> In Progress
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-slate-100" /> Not Started
+                          <div className="h-3 w-3 rounded bg-[#e6ebe8]" /> Not Started
                         </div>
                       </div>
 
                       <Separator className="my-4" />
 
-                      {/* Month-wise breakdown */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
                         {[
-                          { m: 1, t: "Python", range: [1,20] },
-                          { m: 2, t: "FastAPI", range: [21,40] },
-                          { m: 3, t: "ML", range: [41,60] },
-                          { m: 4, t: "Adv DL", range: [61,80] },
-                          { m: 5, t: "RAG", range: [81,100] },
-                          { m: 6, t: "Capstone", range: [101,120] }
+                          { m: 1, t: 'Python', range: [1, 20] },
+                          { m: 2, t: 'FastAPI', range: [21, 40] },
+                          { m: 3, t: 'ML', range: [41, 60] },
+                          { m: 4, t: 'Adv DL', range: [61, 80] },
+                          { m: 5, t: 'RAG', range: [81, 100] },
+                          { m: 6, t: 'Capstone', range: [101, 120] },
                         ].map(({ m, t, range }) => {
-                          const completed = user.progress?.filter(
-                            (p) => p.day_number >= range[0] && p.day_number <= range[1] && p.is_completed
-                          ).length || 0;
+                          const completed =
+                            user.progress?.filter(
+                              (entry) =>
+                                entry.day_number >= range[0] &&
+                                entry.day_number <= range[1] &&
+                                entry.is_completed
+                            ).length || 0;
                           const pct = Math.round((completed / 20) * 100);
+
                           return (
-                            <div key={m} className="bg-slate-50 rounded-xl p-3 text-center">
-                              <p className="text-xs font-semibold text-slate-600 mb-1">M{m}: {t}</p>
-                              <p className="font-heading font-bold text-lg text-slate-900">{pct}%</p>
-                              <Progress value={pct} className="h-1 mt-1" />
+                            <div key={m} className="rounded-xl border border-[#d5e2d9] bg-[#f6f9f7] p-3 text-center">
+                              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#607178]">M{m}</p>
+                              <p className="text-xs font-medium text-[#688087]">{t}</p>
+                              <p className="font-heading mt-1 text-xl font-semibold text-[#1d2f36]">{pct}%</p>
+                              <Progress value={pct} className="mt-1.5 h-1.5" />
                             </div>
                           );
                         })}

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import AuthPage from './pages/AuthPage';
@@ -8,6 +9,7 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import DayDetailPage from './pages/DayDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
+import Background from './components/Background';
 import './App.css';
 
 const AuthContext = createContext();
@@ -46,27 +48,30 @@ function App() {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, API }}>
-      <BrowserRouter>
-        <Toaster position="top-center" richColors />
-        {isLoading ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-lg">Loading...</div>
-          </div>
-        ) : (
-          <Routes>
-            <Route path="/" element={!token ? <AuthPage /> : user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />} />
-            <Route path="/admin-login" element={!token ? <AdminLogin /> : user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/" replace />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route path="/dashboard" element={token && user?.role === 'intern' ? <Dashboard /> : <Navigate to="/" replace />} />
-            <Route path="/dashboard/day/:dayNumber" element={token && user?.role === 'intern' ? <DayDetailPage /> : <Navigate to="/" replace />} />
-            <Route path="/admin" element={token && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        )}
-      </BrowserRouter>
-    </AuthContext.Provider>
+    <ThemeProvider>
+      <AuthContext.Provider value={{ token, user, login, logout, API }}>
+        <Background />
+        <BrowserRouter>
+          <Toaster position="top-center" richColors />
+          {isLoading ? (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-lg">Loading...</div>
+            </div>
+          ) : (
+            <Routes>
+              <Route path="/" element={!token ? <AuthPage /> : user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/admin-login" element={!token ? <AdminLogin /> : user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/" replace />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route path="/dashboard" element={token && user?.role === 'intern' ? <Dashboard /> : <Navigate to="/" replace />} />
+              <Route path="/dashboard/day/:dayNumber" element={token && user?.role === 'intern' ? <DayDetailPage /> : <Navigate to="/" replace />} />
+              <Route path="/admin" element={token && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          )}
+        </BrowserRouter>
+      </AuthContext.Provider>
+    </ThemeProvider>
   );
 }
 

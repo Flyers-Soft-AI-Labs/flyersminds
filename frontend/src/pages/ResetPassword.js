@@ -5,13 +5,13 @@ import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Lock, CheckCircle, AlertCircle, Key } from 'lucide-react';
+import { Lock, CheckCircle, AlertCircle, KeyRound } from 'lucide-react';
 
 export default function ResetPassword() {
   const { token } = useParams();
   const navigate = useNavigate();
   const { API } = useAuth();
-  
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,8 +24,8 @@ export default function ResetPassword() {
     }
   }, [token]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
     setError('');
 
@@ -46,10 +46,8 @@ export default function ResetPassword() {
         token,
         new_password: newPassword,
       });
-      
+
       setSuccess(true);
-      
-      // Redirect to login after 3 seconds
       setTimeout(() => {
         navigate('/');
       }, 3000);
@@ -62,21 +60,17 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-3xl shadow-2xl p-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Password Reset Successful!</h2>
-              <p className="text-gray-600 mb-4">
-                Your password has been successfully reset.
-              </p>
-              <p className="text-sm text-gray-500">
-                Redirecting to login page...
-              </p>
+      <div className="mesh-bg min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto w-full max-w-xl">
+          <div className="surface-panel p-8 text-center animate-rise">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e9f9ee]">
+              <CheckCircle className="h-8 w-8 text-[#1f8a49]" />
             </div>
+            <h2 className="font-heading text-3xl font-semibold surface-title">Password Updated</h2>
+            <p className="mt-2 text-sm surface-copy">Your password was reset successfully.</p>
+            <p className="mt-2 text-xs uppercase tracking-[0.1em] text-[#617379]">
+              Redirecting to login in a moment...
+            </p>
           </div>
         </div>
       </div>
@@ -84,72 +78,63 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Key className="w-7 h-7 text-violet-600" />
+    <div className="mesh-bg min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="surface-panel p-6 sm:p-8 lg:p-10 animate-rise">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(140deg,#0f766e,#14b8a6)] text-white shadow-[0_16px_30px_-20px_rgba(15,118,110,0.9)]">
+              <KeyRound className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="kicker mb-2">Secure Reset</p>
+              <h1 className="font-heading text-3xl font-semibold surface-title">Create New Password</h1>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-white font-heading mb-2">Reset Password</h1>
-          <p className="text-violet-100 text-sm">
-            Enter your new password below
-          </p>
-        </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
-          {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div className="mb-5 flex items-start gap-2 rounded-xl border border-[#e9b4ac] bg-[#fff0ed] px-3.5 py-3 text-sm text-[#b74837]">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="new-password" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
+                <Lock className="h-3.5 w-3.5" />
                 New Password
               </Label>
               <Input
                 id="new-password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Create new password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(event) => setNewPassword(event.target.value)}
                 required
                 minLength={6}
                 className="h-11"
               />
-              <p className="text-xs text-gray-500">
-                Must be at least 6 characters long
-              </p>
+              <p className="mt-2 text-xs text-[#617379]">Must be at least 6 characters long.</p>
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="confirm-password" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
+                <Lock className="h-3.5 w-3.5" />
                 Confirm Password
               </Label>
               <Input
                 id="confirm-password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Re-enter new password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(event) => setConfirmPassword(event.target.value)}
                 required
                 minLength={6}
                 className="h-11"
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-11 bg-violet-600 hover:bg-violet-700 text-white font-semibold"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Resetting...' : 'Reset Password'}
             </Button>
           </form>
