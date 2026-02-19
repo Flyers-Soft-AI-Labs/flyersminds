@@ -5,7 +5,7 @@ import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Shield, Mail, Lock, Key, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Shield, Mail, Lock, Key, AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -17,8 +17,8 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [adminCode, setAdminCode] = useState('');
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
     setError('');
 
@@ -39,43 +39,47 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-              <Shield className="w-8 h-8 text-indigo-600" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-3xl font-bold text-white font-heading">Admin Portal</h1>
-              <p className="text-indigo-200 text-sm">FlyersSoft Learning</p>
-            </div>
+    <div className="mesh-bg min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto grid w-full max-w-4xl gap-6 md:grid-cols-[0.9fr_1.1fr]">
+        <section className="surface-panel p-7 sm:p-8 animate-rise">
+          <p className="kicker mb-4">Admin Route</p>
+          <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(140deg,#0f766e,#14b8a6)] text-white shadow-[0_18px_35px_-20px_rgba(15,118,110,0.9)]">
+            <ShieldCheck className="h-7 w-7" />
           </div>
-          <p className="text-indigo-100 text-sm">
-            Secure admin access with verification code
+          <h1 className="font-heading text-3xl font-semibold surface-title">Control Center</h1>
+          <p className="mt-2 text-sm leading-relaxed surface-copy">
+            Authenticate with credentials and admin code to access intern analytics and curriculum monitoring.
           </p>
-        </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
-          <div className="flex items-center gap-2 mb-6">
-            <Shield className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-xl font-semibold text-gray-800">Admin Login</h2>
+          <div className="mt-6 space-y-3">
+            <div className="surface-panel-soft p-3.5">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#5f7278]">Security Layer</p>
+              <p className="mt-1 text-sm text-[#1f3238]">Email + password + verification code.</p>
+            </div>
+            <div className="surface-panel-soft p-3.5">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#5f7278]">Admin Limit</p>
+              <p className="mt-1 text-sm text-[#1f3238]">Maximum 3 administrator accounts.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="surface-panel p-6 sm:p-8 animate-rise-delay">
+          <div className="mb-5 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-[#0f766e]" />
+            <h2 className="font-heading text-2xl font-semibold surface-title">Admin Sign In</h2>
           </div>
 
-          {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div className="mb-5 flex items-start gap-2 rounded-xl border border-[#e9b4ac] bg-[#fff0ed] px-3.5 py-3 text-sm text-[#b74837]">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
+                <Mail className="h-3.5 w-3.5" />
                 Admin Email
               </Label>
               <Input
@@ -83,73 +87,60 @@ export default function AdminLogin() {
                 type="email"
                 placeholder="admin@flyerssoft.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 required
                 className="h-11"
               />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="password" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
+                <Lock className="h-3.5 w-3.5" />
                 Password
               </Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(event) => setPassword(event.target.value)}
                 required
                 className="h-11"
               />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="admin-code" className="flex items-center gap-2">
-                <Key className="w-4 h-4" />
+                <Key className="h-3.5 w-3.5" />
                 Admin Code
               </Label>
               <Input
                 id="admin-code"
                 type="text"
-                placeholder="Enter admin verification code"
+                placeholder="Verification code"
                 value={adminCode}
-                onChange={(e) => setAdminCode(e.target.value)}
+                onChange={(event) => setAdminCode(event.target.value)}
                 required
                 className="h-11"
               />
-              <p className="text-xs text-gray-500">
-                Required for admin access verification
-              </p>
+              <p className="mt-2 text-xs text-[#607178]">Required for elevated access.</p>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Verifying...' : 'Login as Admin'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Enter Admin Portal'}
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="mt-6 border-t border-[#d7e2da] pt-4">
             <Link
               to="/"
-              className="flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-indigo-600 font-medium"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0f766e] hover:text-[#0d5e59]"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="h-4 w-4" />
               Back to Login
             </Link>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-indigo-100 text-xs">
-            Admin access is limited to authorized personnel only
-          </p>
-        </div>
+        </section>
       </div>
     </div>
   );

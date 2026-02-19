@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+import certifi
 import os
 import logging
 from pathlib import Path
@@ -20,7 +21,14 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+mongo_client_kwargs = {}
+if mongo_url.startswith("mongodb+srv://"):
+    mongo_client_kwargs = {
+        "tls": True,
+        "tlsCAFile": os.environ.get("MONGO_TLS_CA_FILE") or certifi.where(),
+    }
+
+client = AsyncIOMotorClient(mongo_url, **mongo_client_kwargs)
 db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ.get('JWT_SECRET', 'flyerssoft-learn-secret-2024-xk9p')

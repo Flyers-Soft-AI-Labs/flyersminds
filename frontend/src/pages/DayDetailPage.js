@@ -1,25 +1,37 @@
-import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../App";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import { getDayData } from "../data/curriculum";
-import { toast } from "sonner";
-import { Checkbox } from "../components/ui/checkbox";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
-import { Separator } from "../components/ui/separator";
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../App';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
+import { getDayData } from '../data/curriculum';
+import { toast } from 'sonner';
+import { Checkbox } from '../components/ui/checkbox';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Progress } from '../components/ui/progress';
+import { Separator } from '../components/ui/separator';
 import {
-  ExternalLink, CheckCircle2, BookOpen, Code2,
-  FileText, GitBranch, Lightbulb, ChevronLeft, ChevronRight, ListChecks, ArrowLeft, Mail, X, HelpCircle
-} from "lucide-react";
+  ExternalLink,
+  CheckCircle2,
+  BookOpen,
+  Code2,
+  FileText,
+  GitBranch,
+  Lightbulb,
+  ChevronLeft,
+  ChevronRight,
+  ListChecks,
+  ArrowLeft,
+  Mail,
+  X,
+  HelpCircle,
+  Sparkles,
+} from 'lucide-react';
 
 export default function DayDetailPage() {
   const { dayNumber } = useParams();
   const { token, API } = useAuth();
   const navigate = useNavigate();
   const [dayData, setDayData] = useState(null);
-  const [progress, setProgress] = useState([]);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [loading, setLoading] = useState({});
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -29,16 +41,15 @@ export default function DayDetailPage() {
       const res = await axios.get(`${API}/progress`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setProgress(res.data);
-      const dayProgress = res.data.find((p) => p.day_number === parseInt(dayNumber));
+      const dayProgress = res.data.find((p) => p.day_number === parseInt(dayNumber, 10));
       setCompletedTasks(dayProgress?.completed_tasks || []);
     } catch (err) {
-      console.error("Failed to fetch progress", err);
+      console.error('Failed to fetch progress', err);
     }
   }, [API, token, dayNumber]);
 
   useEffect(() => {
-    const data = getDayData(parseInt(dayNumber));
+    const data = getDayData(parseInt(dayNumber, 10));
     setDayData(data);
     fetchProgress();
   }, [dayNumber, fetchProgress]);
@@ -50,27 +61,26 @@ export default function DayDetailPage() {
     try {
       await axios.post(
         `${API}/progress/complete-task`,
-        { day_number: parseInt(dayNumber), task_id: taskId, completed: isCompleted },
+        { day_number: parseInt(dayNumber, 10), task_id: taskId, completed: isCompleted },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const newCompleted = isCompleted
         ? [...completedTasks, taskId]
-        : completedTasks.filter((t) => t !== taskId);
+        : completedTasks.filter((task) => task !== taskId);
       setCompletedTasks(newCompleted);
 
-      // Auto-complete day if all tasks done
       if (dayData && newCompleted.length === dayData.tasks.length) {
         await axios.post(
           `${API}/progress/complete-day`,
-          { day_number: parseInt(dayNumber) },
+          { day_number: parseInt(dayNumber, 10) },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         toast.success(`Day ${dayNumber} completed! Next day is now unlocked.`);
       }
       fetchProgress();
     } catch (err) {
-      toast.error("Failed to update task");
+      toast.error('Failed to update task');
     } finally {
       setLoading((prev) => ({ ...prev, [taskId]: false }));
     }
@@ -78,393 +88,341 @@ export default function DayDetailPage() {
 
   if (!dayData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-3 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
-          <p className="text-slate-500 font-medium font-heading">Loading...</p>
+      <div className="mesh-bg min-h-screen flex items-center justify-center">
+        <div className="glass-panel flex flex-col items-center gap-4 px-6 py-8 rounded-xl">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-700 border-t-cyan-500" />
+          <p className="font-heading text-lg text-slate-300">Loading day plan...</p>
         </div>
       </div>
     );
   }
 
-  const completionPct = Math.round(
-    (completedTasks.length / dayData.tasks.length) * 100
-  );
+  const completionPct = Math.round((completedTasks.length / dayData.tasks.length) * 100);
   const isCompleted = completedTasks.length === dayData.tasks.length;
 
-  const canNavigateToPrev = parseInt(dayNumber) > 1;
-  const canNavigateToNext = parseInt(dayNumber) < 120 && isCompleted;
+  const canNavigateToPrev = parseInt(dayNumber, 10) > 1;
+  const canNavigateToNext = parseInt(dayNumber, 10) < 120 && isCompleted;
 
   const supportContacts = [
-    { name: "Krishna Kompalli", email: "krishna.kompalli@flyerssoft.com" },
-    { name: "Keerthi Ramakrishna", email: "keerthi.ramakrishna@flyerssoft.com" },
-    { name: "Shalini P", email: "shalini.p@flyerssoft.com" }
+    { name: 'Krishna Kompalli', email: 'krishna.kompalli@flyerssoft.com' },
+    { name: 'Keerthi Ramakrishna', email: 'keerthi.ramakrishna@flyerssoft.com' },
+    { name: 'Shalini P', email: 'shalini.p@flyerssoft.com' },
   ];
 
+  const panelClass = 'glass-panel p-6 rounded-2xl border border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm';
+
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
+    <div className="min-h-screen pb-12">
+      <div className="sticky top-0 z-40 border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-3 sm:h-[72px]">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <Link to="/dashboard">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Back to Dashboard</span>
-                  <span className="sm:hidden">Back</span>
+                <Button variant="ghost" size="sm" className="gap-2 px-2.5 sm:px-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
                 </Button>
               </Link>
-              <Separator orientation="vertical" className="h-6" />
-              <div className="flex items-center gap-2">
-                <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100 font-semibold">
-                  Day {dayNumber}
-                </Badge>
-                <span className="text-xs text-slate-400 hidden sm:inline">
-                  Month {dayData.month} &middot; Week {dayData.week}
-                </span>
+
+              <Separator orientation="vertical" className="hidden h-6 sm:block bg-slate-200 dark:bg-white/10" />
+
+              <div className="min-w-0">
+                <Badge className="mb-1 bg-cyan-100 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/50 hover:bg-cyan-200 dark:hover:bg-cyan-900/50">Day {dayNumber}</Badge>
+                <p className="truncate text-xs text-slate-500">
+                  Month {dayData.month} | Week {dayData.week}
+                </p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              {/* Need Help Button */}
+
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowHelpModal(true)}
-                className="gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
+                className="gap-1.5 px-2.5 sm:px-3 border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               >
-                <HelpCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Need Help?</span>
+                <HelpCircle className="h-4 w-4" />
+                <span className="hidden sm:inline">Need Help</span>
               </Button>
-              
-              <Separator orientation="vertical" className="h-6" />
-              
+
+              <Separator orientation="vertical" className="h-6 bg-slate-200 dark:bg-white/10" />
+
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 disabled={!canNavigateToPrev}
-                onClick={() => navigate(`/dashboard/day/${parseInt(dayNumber) - 1}`)}
-                className="h-8 w-8 p-0"
+                onClick={() => navigate(`/dashboard/day/${parseInt(dayNumber, 10) - 1}`)}
+                className="text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-30"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 disabled={!canNavigateToNext}
-                onClick={() => navigate(`/dashboard/day/${parseInt(dayNumber) + 1}`)}
-                className="h-8 w-8 p-0"
+                onClick={() => navigate(`/dashboard/day/${parseInt(dayNumber, 10) + 1}`)}
+                className="text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-30"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Help Modal */}
       {showHelpModal && (
         <div
-          className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          className="modal-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
           onClick={() => setShowHelpModal(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slide-in-up"
-            onClick={(e) => e.stopPropagation()}
+            className="glass-panel w-full max-w-md p-6 animate-in zoom-in-95 duration-200 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10"
+            onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
-                  <HelpCircle className="w-5 h-5 text-violet-600" />
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+                  <HelpCircle className="h-5 w-5" />
                 </div>
-                <h3 className="font-heading font-bold text-xl text-slate-900">
-                  Need Help?
-                </h3>
+                <h3 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Need Help?</h3>
               </div>
               <button
                 onClick={() => setShowHelpModal(false)}
-                className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
+                className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               >
-                <X className="w-4 h-4 text-slate-500" />
+                <X className="h-4 w-4" />
               </button>
             </div>
-            
-            <p className="text-sm text-slate-600 mb-6">
-              Our team is here to support you! Reach out to any of these contacts for guidance, clarifications, or technical assistance.
+
+            <p className="mb-5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              Reach out to any mentor below. Include your day number and error details for faster support.
             </p>
 
             <div className="space-y-3">
-              {supportContacts.map((contact, idx) => (
+              {supportContacts.map((contact) => (
                 <a
-                  key={idx}
+                  key={contact.email}
                   href={`mailto:${contact.email}`}
-                  className="block p-4 rounded-xl border border-slate-100 hover:border-violet-200 hover:bg-violet-50/50 transition-all group"
+                  className="card-hover group block rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/5 p-4 hover:bg-white dark:hover:bg-white/10 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-5 h-5 text-white" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 text-cyan-600 dark:text-cyan-400">
+                      <Mail className="h-4 w-4" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 text-sm mb-0.5">
-                        {contact.name}
-                      </p>
-                      <p className="text-xs text-violet-600 group-hover:text-violet-700 truncate">
-                        {contact.email}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{contact.name}</p>
+                      <p className="truncate text-xs text-slate-500 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">{contact.email}</p>
                     </div>
-                    <ExternalLink className="w-4 h-4 text-slate-300 group-hover:text-violet-500 transition-colors flex-shrink-0" />
+                    <ExternalLink className="h-4 w-4 text-slate-400 dark:text-slate-600 group-hover:text-cyan-600 dark:group-hover:text-white transition-colors" />
                   </div>
                 </a>
               ))}
             </div>
 
-            <div className="mt-6 p-3 bg-violet-50 rounded-xl border border-violet-100">
-              <p className="text-xs text-slate-600 text-center">
-                ðŸ’¡ Click any contact card to send an email
-              </p>
+            <div className="mt-5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/5 p-3 text-center text-xs text-slate-500">
+              Click a contact card to open your email client.
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Content - Single Column */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Title and Progress */}
-        <div className="mb-8">
-          <h1 className="font-heading font-bold text-3xl text-slate-900 mb-2">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <section className="glass-panel relative mb-8 overflow-hidden p-8 rounded-2xl bg-white/60 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+          <div className="absolute -right-16 -top-12 h-64 w-64 rounded-full bg-cyan-500/10 dark:bg-cyan-500/20 blur-3xl" />
+
+          <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-cyan-600 dark:text-cyan-400">
+            <Sparkles className="h-3.5 w-3.5" />
+            Learning Sprint
+          </p>
+          <h1 className="font-heading text-3xl font-bold leading-tight text-slate-900 dark:text-white sm:text-4xl">
             {dayData.topic}
           </h1>
-          <p className="text-sm text-slate-500 mb-4">
-            {dayData.monthTitle} &middot; {dayData.weekTitle}
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            {dayData.monthTitle} | {dayData.weekTitle}
           </p>
-          <div className="flex items-center gap-3">
-            <Progress value={completionPct} className="h-2.5 flex-1" />
-            <span className="text-sm font-semibold text-slate-600 min-w-[50px] text-right">
-              {completionPct}%
-            </span>
-            {isCompleted && (
-              <CheckCircle2 className="w-6 h-6 text-emerald-500 flex-shrink-0" />
-            )}
-          </div>
-        </div>
 
-        {/* Single Column Content - Everything flows vertically */}
+          <div className="mt-6 flex items-center gap-3">
+            <Progress value={completionPct} className="h-2 flex-1 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-cyan-500" />
+            <span className="min-w-[52px] text-right text-sm font-bold text-slate-700 dark:text-slate-300">{completionPct}%</span>
+            {isCompleted && <CheckCircle2 className="h-6 w-6 shrink-0 text-green-500" />}
+          </div>
+        </section>
+
         <div className="space-y-6">
-          
-          {/* 1. Tasks Checklist */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <ListChecks className="w-5 h-5 text-violet-600" />
-              <h2 className="font-heading font-semibold text-lg text-slate-900">
-                Tasks
-              </h2>
-              <span className="text-xs text-slate-500 ml-auto">
+          <section className={panelClass}>
+            <div className="mb-4 flex items-center gap-2">
+              <ListChecks className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Tasks</h2>
+              <span className="ml-auto text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
                 {completedTasks.length}/{dayData.tasks.length}
               </span>
             </div>
-            <div className="space-y-2">
+
+            <div className="space-y-2.5">
               {dayData.tasks.map((task) => {
                 const checked = completedTasks.includes(task.id);
                 return (
                   <label
                     key={task.id}
-                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                      checked
-                        ? "bg-emerald-50/50 border-emerald-200"
-                        : "bg-white border-slate-100 hover:border-violet-200 hover:bg-violet-50/30"
-                    }`}
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition-all ${checked
+                      ? 'border-green-500/20 bg-green-500/10'
+                      : 'border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10'
+                      }`}
                   >
                     <Checkbox
                       checked={checked}
                       disabled={loading[task.id]}
                       onCheckedChange={() => handleTaskToggle(task.id)}
-                      className="mt-0.5 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                      className="mt-0.5 border-slate-400 dark:border-slate-600 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                     />
-                    <span
-                      className={`text-sm leading-relaxed ${
-                        checked ? "text-slate-500 line-through" : "text-slate-700"
-                      }`}
-                    >
+                    <span className={`text-sm leading-relaxed ${checked ? 'text-slate-500 line-through' : 'text-slate-700 dark:text-slate-200'}`}>
                       {task.label}
                     </span>
                   </label>
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          {/* 2. Learning Resources */}
           {dayData.resourceLinks && dayData.resourceLinks.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <BookOpen className="w-5 h-5 text-violet-600" />
-                <h2 className="font-heading font-semibold text-lg text-slate-900">
-                  Learning Resources
-                </h2>
+            <section className={panelClass}>
+              <div className="mb-4 flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Learning Resources</h2>
               </div>
+
               <div className="space-y-4">
                 {dayData.resourceLinks.map((link, idx) => {
-                  // Extract YouTube video ID from URL
                   const getYouTubeId = (url) => {
                     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
                     const match = url.match(regExp);
-                    return (match && match[2].length === 11) ? match[2] : null;
+                    return match && match[2].length === 11 ? match[2] : null;
                   };
 
                   const videoId = getYouTubeId(link.url);
                   const isYouTube = videoId !== null;
 
-                  return isYouTube ? (
-                    // YouTube Video Embed
-                    <div key={idx} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-slate-700">
-                          {link.title}
-                        </span>
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 transition-colors"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          Open in YouTube
-                        </a>
+                  if (isYouTube) {
+                    return (
+                      <div key={idx} className="space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{link.title}</span>
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-500 dark:hover:text-cyan-300"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Open in YouTube
+                          </a>
+                        </div>
+                        <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 shadow-lg" style={{ paddingBottom: '56.25%' }}>
+                          <iframe
+                            className="absolute left-0 top-0 h-full w-full"
+                            src={`https://www.youtube.com/embed/${videoId}`}
+                            title={link.title}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                        </div>
                       </div>
-                      <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm" style={{ paddingBottom: '56.25%' }}>
-                        <iframe
-                          className="absolute top-0 left-0 w-full h-full"
-                          src={`https://www.youtube.com/embed/${videoId}`}
-                          title={link.title}
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    // Regular Link (non-YouTube)
+                    );
+                  }
+
+                  return (
                     <a
                       key={idx}
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-4 rounded-xl border border-slate-100 hover:border-violet-200 hover:bg-violet-50/30 transition-all group"
+                      className="group flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/5 p-4 hover:bg-white dark:hover:bg-white/10 transition-colors"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
-                        <ExternalLink className="w-5 h-5 text-red-500" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        <ExternalLink className="h-5 w-5" />
                       </div>
-                      <span className="text-sm font-medium text-slate-700 group-hover:text-violet-700 transition-colors flex-1">
-                        {link.title}
-                      </span>
-                      <ExternalLink className="w-4 h-4 text-slate-300 group-hover:text-violet-500" />
+                      <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{link.title}</span>
+                      <ExternalLink className="h-4 w-4 text-slate-400 dark:text-slate-600 group-hover:text-cyan-600 dark:group-hover:text-white transition-colors" />
                     </a>
                   );
                 })}
               </div>
-            </div>
+            </section>
           )}
 
-          {/* 3. Coding Task */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Code2 className="w-5 h-5 text-violet-600" />
-              <h2 className="font-heading font-semibold text-lg text-slate-900">
-                Coding Task
-              </h2>
+          <section className={panelClass}>
+            <div className="mb-3 flex items-center gap-2">
+              <Code2 className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Coding Task</h2>
             </div>
-            <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-4 leading-relaxed">
+            <p className="rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50 p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-mono">
               {dayData.codingTask}
             </p>
-          </div>
+          </section>
 
-          {/* 4. Assignment */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-5 h-5 text-violet-600" />
-              <h2 className="font-heading font-semibold text-lg text-slate-900">
-                Assignment
-              </h2>
+          <section className={panelClass}>
+            <div className="mb-3 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Assignment</h2>
             </div>
-            <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-4 leading-relaxed">
+            <p className="rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50 p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
               {dayData.assignment}
             </p>
-          </div>
+          </section>
 
-          {/* 5. Hands-on Practice */}
           {dayData.handsOn && dayData.handsOn.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="w-5 h-5 text-violet-600" />
-                <h2 className="font-heading font-semibold text-lg text-slate-900">
-                  Hands-on Practice
-                </h2>
+            <section className={panelClass}>
+              <div className="mb-3 flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Hands-on Practice</h2>
               </div>
-              <ul className="space-y-2 bg-slate-50 rounded-xl p-4">
+              <ul className="space-y-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50 p-4">
                 {dayData.handsOn.map((item, idx) => (
-                  <li key={idx} className="text-sm text-slate-600 flex items-start gap-2">
-                    <span className="w-2 h-2 rounded-full bg-violet-400 mt-1.5 flex-shrink-0" />
+                  <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-cyan-500" />
                     {item}
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
 
-          {/* 6. Why This Matters */}
           {dayData.explanation && (
-            <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 rounded-2xl p-6 border border-violet-100">
-              <h2 className="font-heading font-semibold text-lg text-violet-900 mb-2">
-                Why This Matters
-              </h2>
-              <p className="text-sm text-violet-700 leading-relaxed">
-                {dayData.explanation}
-              </p>
-            </div>
+            <section className="glass-panel overflow-hidden border border-cyan-200 dark:border-cyan-500/20 bg-gradient-to-br from-cyan-50 dark:from-cyan-950/30 to-slate-50 dark:to-slate-900/50 p-6 rounded-2xl">
+              <h2 className="font-heading text-xl font-semibold text-cyan-700 dark:text-cyan-400">Why This Matters</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{dayData.explanation}</p>
+            </section>
           )}
 
-          {/* 7. Evaluation Checklist */}
           {dayData.evaluationChecklist && dayData.evaluationChecklist.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle2 className="w-5 h-5 text-violet-600" />
-                <h2 className="font-heading font-semibold text-lg text-slate-900">
-                  Evaluation Checklist
-                </h2>
+            <section className={panelClass}>
+              <div className="mb-3 flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Evaluation Checklist</h2>
               </div>
-              <ul className="space-y-2 bg-slate-50 rounded-xl p-4">
+              <ul className="space-y-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50 p-4">
                 {dayData.evaluationChecklist.map((item, idx) => (
-                  <li key={idx} className="text-sm text-slate-600 flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
                     {item}
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
 
-          {/* 8. Git Task */}
           {dayData.gitTask && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <GitBranch className="w-5 h-5 text-violet-600" />
-                <h2 className="font-heading font-semibold text-lg text-slate-900">
-                  Git Task
-                </h2>
+            <section className={panelClass}>
+              <div className="mb-3 flex items-center gap-2">
+                <GitBranch className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Git Task</h2>
               </div>
-              <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-4 font-mono leading-relaxed">
+              <p className="font-mono rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50 p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
                 {dayData.gitTask}
               </p>
-            </div>
+            </section>
           )}
-
-          {/* Bottom spacing */}
-          <div className="h-8" />
         </div>
       </main>
     </div>
