@@ -144,14 +144,14 @@ export default function AuthPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`relative z-10 px-4 py-2.5 text-sm font-semibold transition-colors duration-300 ${activeTab === tab ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+                  className={`relative z-10 px-4 py-2.5 text-sm font-semibold transition-colors duration-300 ${activeTab === tab ? 'text-slate-900' : 'text-slate-400 hover:text-slate-200'
                     }`}
                 >
                   {tab === 'login' ? 'Login' : 'Sign Up'}
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 rounded-xl bg-slate-800 shadow-lg shadow-black/20"
+                      className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-400 shadow-lg shadow-cyan-900/30"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -199,7 +199,7 @@ export default function AuthPage() {
                           placeholder="name@company.com"
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-800/80 border-cyan-500/30 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -208,7 +208,7 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between ml-1">
                         <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Password</Label>
-                        <Link to="#" className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors">Forgot Password?</Link>
+                        <Link to="/forgot-password" className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors">Forgot Password?</Link>
                       </div>
                       <div className="relative group">
                         <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-500 transition-colors group-focus-within:text-cyan-400" />
@@ -217,7 +217,7 @@ export default function AuthPage() {
                           placeholder="••••••••"
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-800/80 border-cyan-500/30 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -249,7 +249,7 @@ export default function AuthPage() {
                           placeholder="John Doe"
                           value={signupName}
                           onChange={(e) => setSignupName(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-800/80 border-cyan-500/30 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -264,7 +264,7 @@ export default function AuthPage() {
                           placeholder="name@company.com"
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-800/80 border-cyan-500/30 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -279,7 +279,7 @@ export default function AuthPage() {
                           placeholder="Create a strong password"
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-800/80 border-cyan-500/30 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
