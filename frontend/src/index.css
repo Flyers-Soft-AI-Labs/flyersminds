@@ -113,11 +113,11 @@
 
   /* Glassmorphism Utilities */
   .glass-panel {
-    @apply bg-white/70 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-xl;
+    @apply bg-white dark:bg-slate-900/60 backdrop-blur-md border border-slate-300 dark:border-white/10 shadow-md dark:shadow-xl;
   }
 
   .glass-card {
-    @apply bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-200 dark:border-white/5 transition-colors duration-300;
+    @apply bg-slate-50 dark:bg-slate-900/40 backdrop-blur-sm border border-slate-300 dark:border-white/5 transition-colors duration-300;
   }
 
   .card-hover {
@@ -137,4 +137,50 @@
   background-image:
     radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.15), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%);
+}
+
+/* Surface panel classes for AdminLogin page */
+.surface-panel {
+  @apply bg-white dark:bg-slate-900/70 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg backdrop-blur-md;
+}
+
+.surface-panel-soft {
+  @apply bg-slate-50 rounded-xl border border-slate-100;
+}
+
+.dark .surface-panel-soft {
+  background-color: rgb(30 41 59);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.surface-title {
+  @apply text-slate-900 dark:text-white;
+}
+
+.surface-copy {
+  @apply text-slate-600 dark:text-slate-400;
+}
+
+.kicker {
+  @apply text-xs font-bold uppercase tracking-[0.12em] text-teal-600 dark:text-teal-400;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.5s ease-out forwards;
+}
+
+.animate-rise-delay {
+  animation: rise 0.5s ease-out 0.15s forwards;
+  opacity: 0;
 }
