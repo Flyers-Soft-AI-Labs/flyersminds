@@ -11,6 +11,7 @@ import DayDetailPage from './pages/DayDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
 import Background from './components/Background';
+import ChatBot from './components/ChatBot';
 import './App.css';
 
 const AuthContext = createContext();
@@ -54,6 +55,7 @@ function App() {
         <Background />
         <BrowserRouter>
           <Toaster position="top-center" richColors />
+          <ChatBot />
           {isLoading ? (
             <div className="min-h-screen flex items-center justify-center">
               <div className="text-lg">Loading...</div>

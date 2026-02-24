@@ -8,7 +8,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 import uuid
 from datetime import datetime, timezone, timedelta
 import bcrypt
@@ -16,6 +16,7 @@ import jwt
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from groq import Groq
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -35,6 +36,32 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'flyerssoft-learn-secret-2024-xk9p')
 JWT_ALGORITHM = "HS256"
 ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
 MAX_ADMINS = 3
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+
+CHATBOT_SYSTEM_PROMPT = """You are FlyersBot, an AI learning assistant for FlyersSoft Learning Studio's 120-day AI/ML internship program based in Chennai, India.
+
+Your role is to help interns with:
+- Technical doubts about Python, FastAPI, Machine Learning, Deep Learning, RAG, and Production AI
+- Understanding concepts from their daily curriculum tasks
+- Debugging code and explaining error messages
+- Best practices and real-world tips
+- Staying motivated through their learning journey
+
+The curriculum covers:
+- Month 1 (Days 1–20): Python Fundamentals — data structures, OOP, NumPy, Pandas
+- Month 2 (Days 21–40): FastAPI & Backend Development — REST APIs, JWT auth, MongoDB, async Python
+- Month 3 (Days 41–60): Machine Learning — Scikit-learn, supervised/unsupervised learning, model evaluation
+- Month 4 (Days 61–80): Advanced Deep Learning — TensorFlow, PyTorch, CNN, RNN, transfer learning
+- Month 5 (Days 81–100): RAG & Production AI — LangChain, vector databases, LLMs, MLOps, deployment
+- Month 6 (Days 101–120): Capstone Project — system design, full-stack AI, CI/CD, documentation
+
+Guidelines:
+- Be concise, clear, and encouraging
+- Use code examples when helpful — wrap them in triple backticks with the language name
+- If a question is outside the curriculum scope, still try to help or redirect kindly
+- For complex problems, break your answer into numbered steps
+- Always end with an encouraging note if the intern seems stuck
+- If you're unsure about something, be honest and suggest reaching out to mentors at FlyersSoft"""
 
 # Email configuration
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
@@ -89,6 +116,16 @@ class TaskComplete(BaseModel):
     day_number: int
     task_id: str
     completed: bool
+
+
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: Optional[List[ChatMessage]] = []
 
 
 def hash_password(password: str) -> str:
@@ -453,6 +490,37 @@ async def get_user_progress(user_id: str, user=Depends(get_current_user)):
     ).to_list(1000)
 
     return {"user": target, "progress": progress}
+
+
+@api_router.post("/chat")
+async def chat(data: ChatRequest, user=Depends(get_current_user)):
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="Chatbot not configured")
+
+    try:
+        groq_client = Groq(api_key=GROQ_API_KEY)
+
+        messages = [{"role": "system", "content": CHATBOT_SYSTEM_PROMPT}]
+
+        # Include up to last 10 messages of history for context
+        for msg in data.history[-10:]:
+            messages.append({"role": msg.role, "content": msg.content})
+
+        messages.append({"role": "user", "content": data.message})
+
+        completion = groq_client.chat.completions.create(
+            model="moonshotai/kimi-k2-instruct-0905",
+            messages=messages,
+            max_tokens=1024,
+            temperature=0.7,
+        )
+
+        reply = completion.choices[0].message.content
+        return {"reply": reply}
+
+    except Exception as e:
+        logger.error(f"Groq chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
 
 
 @api_router.get("/health")
