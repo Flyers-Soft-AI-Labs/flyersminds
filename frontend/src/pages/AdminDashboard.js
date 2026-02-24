@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../App';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import { curriculum } from '../data/curriculum';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
-import { Users, ChevronDown, ChevronUp, Search, Calendar, TrendingUp, Sparkles } from 'lucide-react';
+import { Users, ChevronDown, ChevronUp, Search, Calendar, TrendingUp, Sparkles, FileText } from 'lucide-react';
 import { Input } from '../components/ui/input';
 
 export default function AdminDashboard() {
   const { token, API } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedUser, setExpandedUser] = useState(null);
@@ -189,6 +191,13 @@ export default function AdminDashboard() {
                         {progressPct}%
                       </Badge>
 
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/profile/${user.id}`); }}
+                        className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#b8d4cb] bg-[#e8f6f2] px-3 py-1.5 text-xs font-semibold text-[#0f766e] hover:bg-[#d0ede5] transition-colors"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Resume
+                      </button>
                       {isExpanded ? (
                         <ChevronUp className="h-4 w-4 text-[#708289]" />
                       ) : (

@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../App';
 import { useTheme } from '../context/ThemeContext';
-import { BookOpen, HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -40,17 +42,16 @@ export default function Navbar() {
           {/* Logo Section */}
           <div className="flex items-center gap-3">
             <div className="relative group cursor-pointer">
-              <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 opacity-30 blur group-hover:opacity-60 transition duration-300"></div>
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 text-cyan-600 dark:text-white shadow-inner">
-                <BookOpen className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-purple-500 to-purple-700 opacity-30 blur group-hover:opacity-60 transition duration-300"></div>
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-md">
+                <img src="/flyerslogo.jpg" alt="FlyersSoft Logo" className="h-10 w-10 object-cover" />
               </div>
             </div>
             <div>
               <p className="font-heading text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                 FlyersSoft
-                <span className="text-cyan-600 dark:text-cyan-400">.</span>
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Learn Studio</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Learning Studio</p>
             </div>
           </div>
 
@@ -98,11 +99,11 @@ export default function Navbar() {
 
                     <div className="p-2 space-y-1">
                       <button
-                        onClick={() => setShowProfileDropdown(false)}
+                        onClick={() => { setShowProfileDropdown(false); navigate('/profile'); }}
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-all hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                       >
                         <User className="h-4 w-4" />
-                        Account Settings
+                        My Profile
                       </button>
 
                       <div className="my-1 h-px bg-slate-200 dark:bg-white/5" />
@@ -129,49 +130,49 @@ export default function Navbar() {
       {/* Support Modal */}
       {showHelpModal && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setShowHelpModal(false)}
         >
           <div
-            className="w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl shadow-cyan-900/20 animate-in zoom-in-95 duration-300"
+            className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/50 dark:shadow-cyan-900/20 animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative bg-gradient-to-r from-cyan-950 to-slate-900 p-6 border-b border-white/5">
+            <div className="relative bg-slate-50 dark:bg-gradient-to-r dark:from-cyan-950 dark:to-slate-900 p-6 border-b border-slate-200 dark:border-white/5">
               <div className="absolute top-0 right-0 p-4">
-                <button onClick={() => setShowHelpModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors">
+                <button onClick={() => setShowHelpModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-white transition-colors">
                   <X className="h-5 w-5" />
                 </button>
               </div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
                   <Zap className="h-5 w-5" />
                 </div>
-                <h2 className="font-heading text-xl font-bold text-white">Priority Support</h2>
+                <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">Priority Support</h2>
               </div>
-              <p className="text-sm text-slate-400 pl-1">
+              <p className="text-sm text-slate-500 dark:text-slate-400 pl-1">
                 Stuck on a task? Our mentors are ready to help you unblock.
               </p>
             </div>
 
-            <div className="p-6 space-y-3 bg-slate-950/50">
+            <div className="p-6 space-y-3 bg-white dark:bg-slate-950/50">
               {supportContacts.map((contact) => (
                 <a
                   key={contact.email}
                   href={`mailto:${contact.email}`}
-                  className="group flex items-center gap-4 rounded-xl border border-white/5 bg-slate-900 p-4 transition-all hover:border-cyan-500/30 hover:shadow-lg hover:shadow-cyan-900/10 hover:-translate-y-0.5"
+                  className="group flex items-center gap-4 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900 p-4 transition-all hover:border-cyan-500/30 hover:shadow-md hover:-translate-y-0.5"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-bold text-xs">
                     {contact.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                    <p className="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                       {contact.name}
                     </p>
                     <p className="truncate text-xs text-slate-500">
                       {contact.email}
                     </p>
                   </div>
-                  <Mail className="h-4 w-4 text-slate-600 group-hover:text-cyan-400 transition-colors" />
+                  <Mail className="h-4 w-4 text-slate-400 group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors" />
                 </a>
               ))}
             </div>
