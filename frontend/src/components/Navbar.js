@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../App';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -40,17 +42,16 @@ export default function Navbar() {
           {/* Logo Section */}
           <div className="flex items-center gap-3">
             <div className="relative group cursor-pointer">
-              <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 opacity-30 blur group-hover:opacity-60 transition duration-300"></div>
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-md">
-                <span className="font-heading text-base font-bold text-white tracking-tight">FS</span>
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-purple-500 to-purple-700 opacity-30 blur group-hover:opacity-60 transition duration-300"></div>
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-md">
+                <img src="/flyerslogo.jpg" alt="FlyersSoft Logo" className="h-10 w-10 object-cover" />
               </div>
             </div>
             <div>
               <p className="font-heading text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                 FlyersSoft
-                <span className="text-cyan-600 dark:text-cyan-400">.</span>
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Learn Studio</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Learning Studio</p>
             </div>
           </div>
 
@@ -98,11 +99,11 @@ export default function Navbar() {
 
                     <div className="p-2 space-y-1">
                       <button
-                        onClick={() => setShowProfileDropdown(false)}
+                        onClick={() => { setShowProfileDropdown(false); navigate('/profile'); }}
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-all hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                       >
                         <User className="h-4 w-4" />
-                        Account Settings
+                        My Profile
                       </button>
 
                       <div className="my-1 h-px bg-slate-200 dark:bg-white/5" />

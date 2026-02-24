@@ -104,7 +104,9 @@ export default function Dashboard() {
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="font-heading text-4xl font-bold text-slate-900 dark:text-white sm:text-5xl">
-                Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
+                Welcome back{user?.name ? (
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600">, {user.name.split(' ')[0]}</span>
+                ) : ''}
               </h1>
               <p className="mt-3 max-w-2xl text-base text-slate-600 dark:text-slate-400">
                 Stay on rhythm. Complete today&apos;s tasks and unlock your next milestone in the AI/ML journey.

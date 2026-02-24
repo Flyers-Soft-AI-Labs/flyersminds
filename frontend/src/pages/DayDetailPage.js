@@ -253,56 +253,57 @@ export default function DayDetailPage() {
       {/* ── Help modal ── */}
       {showHelpModal && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setShowHelpModal(false)}
         >
           <div
-            className="w-full max-w-md p-6 animate-in zoom-in-95 duration-200 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xl"
+            className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+            {/* Header */}
+            <div className="relative bg-slate-50 dark:bg-gradient-to-r dark:from-cyan-950 dark:to-slate-900 p-6 border-b border-slate-200 dark:border-white/5">
+              <div className="absolute top-0 right-0 p-4">
+                <button
+                  onClick={() => setShowHelpModal(false)}
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-white transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
                   <HelpCircle className="h-5 w-5" />
                 </div>
-                <h3 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Need Help?</h3>
+                <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">Priority Support</h2>
               </div>
-              <button
-                onClick={() => setShowHelpModal(false)}
-                className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <p className="text-sm text-slate-500 dark:text-slate-400 pl-1">
+                Stuck on a task? Our mentors are ready to help you unblock.
+              </p>
             </div>
 
-            <p className="mb-5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              Reach out to any mentor below. Include your day number and error details for faster support.
-            </p>
-
-            <div className="space-y-3">
+            {/* Contact cards */}
+            <div className="p-6 space-y-3 bg-white dark:bg-slate-950/50">
               {supportContacts.map((contact) => (
                 <a
                   key={contact.email}
                   href={`mailto:${contact.email}`}
-                  className="group flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/5 p-4 hover:bg-white dark:hover:bg-white/10 transition-colors"
+                  className="group flex items-center gap-4 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900 p-4 transition-all hover:border-cyan-500/30 hover:shadow-md hover:-translate-y-0.5"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 text-cyan-600 dark:text-cyan-400">
-                    <Mail className="h-4 w-4" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-bold text-xs">
+                    {contact.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{contact.name}</p>
-                    <p className="truncate text-xs text-slate-500 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                    <p className="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                      {contact.name}
+                    </p>
+                    <p className="truncate text-xs text-slate-500">
                       {contact.email}
                     </p>
                   </div>
-                  <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors" />
+                  <Mail className="h-4 w-4 text-slate-400 group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors" />
                 </a>
               ))}
             </div>
-
-            <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
-              Click a contact card to open your email client.
-            </p>
           </div>
         </div>
       )}
