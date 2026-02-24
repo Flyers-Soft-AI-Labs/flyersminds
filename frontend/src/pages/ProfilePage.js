@@ -568,7 +568,7 @@ export default function ProfilePage() {
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                       <div>
                         <h4 className="text-sm font-bold text-[#1a2a31] dark:text-white">AI / ML Engineering Intern</h4>
-                        <p className="text-xs font-semibold text-[#0f766e]">FlyersSoft Learning Program · Hyderabad, India</p>
+                        <p className="text-xs font-semibold text-[#0f766e]">FlyersSoft Learning Program · Chennai, India</p>
                       </div>
                       <span className="shrink-0 rounded-full bg-[#e8f6f2] px-2.5 py-1 text-[10px] font-semibold text-[#0f766e] dark:bg-[#0f766e]/20">
                         {joinDate} – Present
