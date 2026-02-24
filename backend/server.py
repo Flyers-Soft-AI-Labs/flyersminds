@@ -502,7 +502,6 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
 
         messages = [{"role": "system", "content": CHATBOT_SYSTEM_PROMPT}]
 
-        # Include up to last 10 messages of history for context
         for msg in data.history[-10:]:
             messages.append({"role": msg.role, "content": msg.content})
 
@@ -511,7 +510,7 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
         completion = await groq_client.chat.completions.create(
             model="moonshotai/kimi-k2-instruct-0905",
             messages=messages,
-            max_tokens=512,
+            max_tokens=1024,
             temperature=0.7,
         )
 
@@ -519,8 +518,17 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
         return {"reply": reply}
 
     except Exception as e:
-        logger.error(f"Groq chat error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        logger.error(f"Groq chat error: {error_msg}")
+
+        if "model" in error_msg.lower() or "404" in error_msg:
+            raise HTTPException(status_code=502, detail="model_not_found")
+        elif "auth" in error_msg.lower() or "api key" in error_msg.lower() or "401" in error_msg:
+            raise HTTPException(status_code=502, detail="auth_error")
+        elif "rate" in error_msg.lower() or "429" in error_msg:
+            raise HTTPException(status_code=502, detail="rate_limit")
+        else:
+            raise HTTPException(status_code=502, detail="service_error")
 
 
 @api_router.get("/health")

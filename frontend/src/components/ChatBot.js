@@ -135,10 +135,15 @@ export default function ChatBot() {
       setMessages((prev) => [...prev, botMsg]);
       if (!isOpen) setUnread((n) => n + 1);
     } catch (err) {
-      const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
+      const detail = err?.response?.data?.detail || '';
+      let friendlyMsg = "I'm having a moment — please try again in a few seconds!";
+      if (detail === 'model_not_found') friendlyMsg = "The AI model isn't available right now. Please try again shortly.";
+      else if (detail === 'auth_error') friendlyMsg = "There's a configuration issue on our end. Please contact your mentor.";
+      else if (detail === 'rate_limit') friendlyMsg = "I'm getting too many requests right now. Please wait a moment and try again!";
+
       const errMsg = {
         role: 'assistant',
-        content: `⚠️ Error: ${detail}`,
+        content: friendlyMsg,
         id: Date.now().toString() + '_err',
       };
       setMessages((prev) => [...prev, errMsg]);
