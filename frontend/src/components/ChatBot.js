@@ -94,9 +94,6 @@ export default function ChatBot() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Don't render if not logged in
-  if (!token || !user) return null;
-
   // Auto-scroll to bottom
   useEffect(() => {
     if (isOpen) {
@@ -111,6 +108,9 @@ export default function ChatBot() {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
+
+  // Don't render if not logged in
+  if (!token || !user) return null;
 
   const sendMessage = async () => {
     const trimmed = input.trim();
