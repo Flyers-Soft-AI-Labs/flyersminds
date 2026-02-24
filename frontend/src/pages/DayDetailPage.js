@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../App';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -41,6 +41,10 @@ export default function DayDetailPage() {
   const [evalChecked, setEvalChecked] = useState({});
   const [expandedMonths, setExpandedMonths] = useState(new Set());
   const [expandedWeeks, setExpandedWeeks] = useState(new Set());
+  const [sidebarWidth, setSidebarWidth] = useState(240);
+  const isResizingSidebar = useRef(false);
+  const sidebarResizeStartX = useRef(0);
+  const sidebarResizeStartWidth = useRef(240);
 
   // Scroll to top whenever the day changes
   useEffect(() => {
@@ -87,6 +91,26 @@ export default function DayDetailPage() {
     setDayData(data);
     fetchProgress();
   }, [dayNumber, fetchProgress]);
+
+  useEffect(() => {
+    const onMouseMove = (e) => {
+      if (!isResizingSidebar.current) return;
+      const delta = e.clientX - sidebarResizeStartX.current;
+      const newWidth = Math.min(400, Math.max(160, sidebarResizeStartWidth.current + delta));
+      setSidebarWidth(newWidth);
+    };
+    const onMouseUp = () => {
+      isResizingSidebar.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, []);
 
   const isDayCompleted = (dayNum) =>
     allProgress.some((p) => p.day_number === dayNum && p.is_completed);
@@ -312,7 +336,10 @@ export default function DayDetailPage() {
       <div className="mx-auto max-w-[1400px] flex">
 
         {/* ── Left sidebar curriculum navigation ── */}
-        <aside className="hidden lg:block w-60 xl:w-64 shrink-0 border-r border-slate-300 dark:border-white/5 bg-slate-50 dark:bg-transparent">
+        <aside
+          className="hidden lg:block shrink-0 bg-slate-50 dark:bg-transparent"
+          style={{ width: sidebarWidth }}
+        >
           <div className="sticky top-[65px] sm:top-[73px] max-h-[calc(100vh-73px)] overflow-y-auto">
             <div className="p-3 pt-4">
               <p className="mb-3 px-2 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
@@ -403,6 +430,19 @@ export default function DayDetailPage() {
             </div>
           </div>
         </aside>
+
+        {/* ── Sidebar resize handle ── */}
+        <div
+          className="hidden lg:block w-1 shrink-0 cursor-col-resize border-r border-slate-300 dark:border-white/5 hover:border-cyan-400 dark:hover:border-cyan-500 transition-colors"
+          onMouseDown={(e) => {
+            isResizingSidebar.current = true;
+            sidebarResizeStartX.current = e.clientX;
+            sidebarResizeStartWidth.current = sidebarWidth;
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+          }}
+        />
 
         {/* ── Day content ── */}
         <main className="flex-1 min-w-0 px-4 py-8 sm:px-6 lg:px-8">

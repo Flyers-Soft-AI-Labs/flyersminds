@@ -42,7 +42,10 @@ function renderContent(text) {
   };
 
   lines.forEach((line, i) => {
-    if (line.startsWith('```')) { inCode ? (inCode = false, flushCode()) : (inCode = true); return; }
+    if (line.startsWith('```')) {
+      if (inCode) { inCode = false; flushCode(); } else { inCode = true; }
+      return;
+    }
     if (inCode) { codeLines.push(line); return; }
 
     const parseLine = (raw) =>

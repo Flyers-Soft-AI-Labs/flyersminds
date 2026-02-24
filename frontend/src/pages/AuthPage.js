@@ -14,7 +14,6 @@ import {
   Mail,
   Rocket,
   Shield,
-  Sparkles,
   User,
   ArrowRight,
   Sun,

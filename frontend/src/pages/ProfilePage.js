@@ -5,7 +5,7 @@ import axios from 'axios';
 import Navbar from '../components/Navbar';
 import { Progress } from '../components/ui/progress';
 import {
-  User, Mail, Calendar, Award, TrendingUp, Code, Brain, Cpu,
+  Mail, Calendar, Award, TrendingUp, Code, Brain, Cpu,
   Database, Rocket, Star, CheckCircle, Zap, Download,
   ArrowLeft, BookOpen, Target, Activity, Layers, GitBranch,
   Trophy, Users, BarChart2, Sparkles, Clock, Shield,

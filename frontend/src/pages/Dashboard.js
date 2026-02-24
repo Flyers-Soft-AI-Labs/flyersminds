@@ -17,7 +17,6 @@ import {
   Code2,
   Trophy,
   Flame,
-  Sparkles,
   Gauge,
   Zap
 } from 'lucide-react';
