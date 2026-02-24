@@ -16,7 +16,7 @@ import jwt
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from groq import Groq
+from groq import AsyncGroq
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -498,7 +498,7 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Chatbot not configured")
 
     try:
-        groq_client = Groq(api_key=GROQ_API_KEY)
+        groq_client = AsyncGroq(api_key=GROQ_API_KEY)
 
         messages = [{"role": "system", "content": CHATBOT_SYSTEM_PROMPT}]
 
@@ -508,7 +508,7 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
 
         messages.append({"role": "user", "content": data.message})
 
-        completion = groq_client.chat.completions.create(
+        completion = await groq_client.chat.completions.create(
             model="moonshotai/kimi-k2-instruct-0905",
             messages=messages,
             max_tokens=512,
@@ -520,7 +520,7 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
 
     except Exception as e:
         logger.error(f"Groq chat error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @api_router.get("/health")

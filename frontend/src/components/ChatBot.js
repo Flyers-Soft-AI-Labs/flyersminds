@@ -135,9 +135,10 @@ export default function ChatBot() {
       setMessages((prev) => [...prev, botMsg]);
       if (!isOpen) setUnread((n) => n + 1);
     } catch (err) {
+      const detail = err?.response?.data?.detail || err?.message || 'Unknown error';
       const errMsg = {
         role: 'assistant',
-        content: "Sorry, I'm having trouble connecting right now. Please try again in a moment or reach out to your mentor directly.",
+        content: `⚠️ Error: ${detail}`,
         id: Date.now().toString() + '_err',
       };
       setMessages((prev) => [...prev, errMsg]);
