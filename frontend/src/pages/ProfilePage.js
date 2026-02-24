@@ -437,10 +437,10 @@ export default function ProfilePage() {
         )}
 
         {/* ── Hero Banner ── */}
-        <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] p-8 sm:p-10">
+        <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-[#e8f6f2] via-[#d0ede6] to-[#c5e4dd] dark:from-[#0f2027] dark:via-[#203a43] dark:to-[#2c5364] p-8 sm:p-10 border border-[#c5ddd8] dark:border-transparent">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-teal-500/10 blur-3xl" />
             <div className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-500/5 blur-3xl" />
           </div>
           <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
@@ -458,31 +458,31 @@ export default function ProfilePage() {
             {/* Identity */}
             <div className="flex-1 min-w-0">
               <div className="mb-2 flex flex-wrap items-center gap-3">
-                <h1 className="font-heading text-3xl font-bold text-white sm:text-4xl">{profileUser?.name}</h1>
-                <span className="rounded-full border border-cyan-500/30 bg-cyan-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-300">
+                <h1 className="font-heading text-3xl font-bold text-[#1a2a31] dark:text-white sm:text-4xl">{profileUser?.name}</h1>
+                <span className="rounded-full border border-[#0f766e]/40 bg-[#0f766e]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#0f766e] dark:border-cyan-500/30 dark:bg-cyan-500/20 dark:text-cyan-300">
                   AI/ML Intern
                 </span>
                 {overallPct >= 80 && (
-                  <span className="rounded-full border border-yellow-500/30 bg-yellow-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-yellow-300">
+                  <span className="rounded-full border border-yellow-600/40 bg-yellow-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-yellow-700 dark:border-yellow-500/30 dark:bg-yellow-500/20 dark:text-yellow-300">
                     ⭐ Top Performer
                   </span>
                 )}
               </div>
-              <p className="mb-1 text-sm text-slate-300">{profileUser?.email}</p>
-              <p className="text-xs text-slate-400">AI/ML Intern · FlyersSoft Learning Studio · Since {joinDate}</p>
+              <p className="mb-1 text-sm text-[#3a4a52] dark:text-slate-300">{profileUser?.email}</p>
+              <p className="text-xs text-[#5f7077] dark:text-slate-400">AI/ML Intern · FlyersSoft Learning Studio · Since {joinDate}</p>
             </div>
 
             {/* Mini stats */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: 'Overall',   value: `${overallPct}%`,        color: 'text-cyan-400' },
-                { label: 'Days Done', value: `${completedDays}/120`,   color: 'text-green-400' },
-                { label: 'Streak',    value: `${streak}d`,             color: 'text-orange-400' },
-                { label: 'XP',        value: xp.toLocaleString(),       color: 'text-purple-400' },
+                { label: 'Overall',   value: `${overallPct}%`,      lightColor: 'text-[#0f766e]',  darkColor: 'dark:text-cyan-400' },
+                { label: 'Days Done', value: `${completedDays}/120`, lightColor: 'text-green-700',  darkColor: 'dark:text-green-400' },
+                { label: 'Streak',    value: `${streak}d`,           lightColor: 'text-orange-600', darkColor: 'dark:text-orange-400' },
+                { label: 'XP',        value: xp.toLocaleString(),    lightColor: 'text-purple-700', darkColor: 'dark:text-purple-400' },
               ].map((s) => (
-                <div key={s.label} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center backdrop-blur-sm">
-                  <p className={`font-heading text-xl font-bold ${s.color}`}>{s.value}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-slate-400">{s.label}</p>
+                <div key={s.label} className="rounded-xl border border-[#b8d4cb] bg-white/70 px-4 py-3 text-center backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+                  <p className={`font-heading text-xl font-bold ${s.lightColor} ${s.darkColor}`}>{s.value}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[#5f7077] dark:text-slate-400">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -498,19 +498,19 @@ export default function ProfilePage() {
             {/* ── Resume Card ── */}
             <div className="surface-panel overflow-hidden">
               {/* Card header */}
-              <div className="flex items-center justify-between bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4">
+              <div className="flex items-center justify-between bg-gradient-to-r from-[#f0f9f7] to-[#e8f6f2] dark:from-slate-800 dark:to-slate-900 px-6 py-4 border-b border-[#dbe5de] dark:border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f766e]/15 text-[#0f766e] dark:bg-cyan-500/20 dark:text-cyan-400">
                     <BookOpen className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="font-heading text-base font-semibold text-white">Professional Resume</h2>
-                    <p className="text-xs text-slate-400">Auto-generated · updated in real-time</p>
+                    <h2 className="font-heading text-base font-semibold text-[#1a2a31] dark:text-white">Professional Resume</h2>
+                    <p className="text-xs text-[#5f7077] dark:text-slate-400">Auto-generated · updated in real-time</p>
                   </div>
                 </div>
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/20 px-4 py-2 text-xs font-semibold text-cyan-400 transition-colors hover:bg-cyan-500/30"
+                  className="flex items-center gap-2 rounded-xl border border-[#0f766e]/30 bg-[#e8f6f2] px-4 py-2 text-xs font-semibold text-[#0f766e] transition-colors hover:bg-[#d0ede5] dark:border-cyan-500/30 dark:bg-cyan-500/20 dark:text-cyan-400 dark:hover:bg-cyan-500/30"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Export / Print
@@ -798,7 +798,7 @@ export default function ProfilePage() {
             {/* Commit Activity (last 30 days slots) */}
             <div className="surface-panel p-6">
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-white/5">
                   <GitBranch className="h-5 w-5" />
                 </div>
                 <h2 className="font-heading text-base font-semibold text-[#1a2a31] dark:text-white">Progress Heatmap</h2>
@@ -828,9 +828,9 @@ export default function ProfilePage() {
             <div className="surface-panel p-6 text-center">
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[#0f766e]">Program Completion</p>
               <div className="mx-auto mb-3 flex h-28 w-28 items-center justify-center rounded-full border-8 border-[#e8f0ed] dark:border-slate-700" style={{
-                background: `conic-gradient(#0f766e ${overallPct * 3.6}deg, transparent 0deg)`,
+                background: `conic-gradient(#0f766e ${overallPct * 3.6}deg, #e8f0ed 0deg)`,
               }}>
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white dark:bg-slate-900">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white dark:bg-slate-900 shadow-sm">
                   <span className="font-heading text-2xl font-bold text-[#1a2a31] dark:text-white">{overallPct}%</span>
                 </div>
               </div>
