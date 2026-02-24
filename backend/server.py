@@ -38,7 +38,7 @@ ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
 MAX_ADMINS = 3
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 
-CHATBOT_SYSTEM_PROMPT = """You are FlyersBot, an AI learning assistant for FlyersSoft Learning Studio's 120-day AI/ML internship program based in Chennai, India.
+CHATBOT_SYSTEM_PROMPT = """You are FlyersMind Bot, an AI learning assistant for Flyers Minds's 120-day AI/ML internship program based in Chennai, India.
 
 Your role is to help interns with:
 - Technical doubts about Python, FastAPI, Machine Learning, Deep Learning, RAG, and Production AI
@@ -61,7 +61,7 @@ Guidelines:
 - If a question is outside the curriculum scope, still try to help or redirect kindly
 - For complex problems, break your answer into numbered steps
 - Always end with an encouraging note if the intern seems stuck
-- If you're unsure about something, be honest and suggest reaching out to mentors at FlyersSoft"""
+- If you're unsure about something, be honest and suggest reaching out to mentors at Flyers Minds"""
 
 # Email configuration
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
@@ -539,7 +539,7 @@ async def health():
 @app.get("/")
 async def root():
     return {
-        "message": "Flyerssoft Learn API",
+        "message": "Flyers Minds API",
         "version": "2.0.0",
         "endpoints": {
             "health": "/api/health",
@@ -555,7 +555,7 @@ async def root():
 @app.on_event("startup")
 async def startup():
     print("\n" + "="*60)
-    print("🚀 FLYERSSOFT LEARN API STARTING")
+    print("🚀 FLYERS MINDS API STARTING")
     print("="*60)
     print(f"✅ MongoDB: {os.environ.get('MONGO_URL', 'Not configured')[:50]}...")
     print(f"✅ Database: {os.environ.get('DB_NAME', 'Not configured')}")

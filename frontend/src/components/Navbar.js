@@ -44,12 +44,12 @@ export default function Navbar() {
             <div className="relative group cursor-pointer">
               <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-purple-500 to-purple-700 opacity-30 blur group-hover:opacity-60 transition duration-300"></div>
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-md">
-                <img src="/flyerslogo.jpg" alt="FlyersSoft Logo" className="h-10 w-10 object-cover" />
+                <img src="/flyerslogo.jpg" alt="Flyers Minds Logo" className="h-10 w-10 object-cover" />
               </div>
             </div>
             <div>
               <p className="font-heading text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-                FlyersSoft
+                Flyers Minds
               </p>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Learning Studio</p>
             </div>

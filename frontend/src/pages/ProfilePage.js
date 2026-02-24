@@ -182,11 +182,11 @@ export default function ProfilePage() {
   const generateSummary = () => {
     const doneMonths = [1, 2, 3, 4, 5, 6].filter((m) => monthProgress(m).pct >= 80);
     const skillStr   = doneMonths.map((m) => MONTH_SKILLS[m].title).join(', ');
-    if (completedDays === 0) return 'Aspiring AI/ML developer enrolled in FlyersSoft\'s intensive 120-day program. Eager to build expertise in Python, Machine Learning, and production AI systems.';
-    if (completedDays >= 100) return `Results-driven AI/ML engineer with hands-on expertise in ${skillStr}. Completed advanced coursework in deep learning, production AI deployment, and RAG architectures through FlyersSoft's rigorous internship program.`;
-    if (completedDays >= 60)  return `Motivated AI/ML developer proficient in ${skillStr}. Advancing through specialised training in deep learning and production AI at FlyersSoft.`;
-    if (completedDays >= 20)  return `Dedicated software developer with foundational expertise in ${skillStr || 'Python and backend development'}. Actively expanding skills in machine learning through structured training at FlyersSoft.`;
-    return 'Proactive developer building a strong Python foundation. Enrolled in FlyersSoft\'s comprehensive 120-day AI/ML internship.';
+    if (completedDays === 0) return 'Aspiring AI/ML developer enrolled in Flyers Minds\'s intensive 120-day program. Eager to build expertise in Python, Machine Learning, and production AI systems.';
+    if (completedDays >= 100) return `Results-driven AI/ML engineer with hands-on expertise in ${skillStr}. Completed advanced coursework in deep learning, production AI deployment, and RAG architectures through Flyers Minds's rigorous internship program.`;
+    if (completedDays >= 60)  return `Motivated AI/ML developer proficient in ${skillStr}. Advancing through specialised training in deep learning and production AI at Flyers Minds.`;
+    if (completedDays >= 20)  return `Dedicated software developer with foundational expertise in ${skillStr || 'Python and backend development'}. Actively expanding skills in machine learning through structured training at Flyers Minds.`;
+    return 'Proactive developer building a strong Python foundation. Enrolled in Flyers Minds\'s comprehensive 120-day AI/ML internship.';
   };
 
   const joinDate = profileUser?.created_at
@@ -244,7 +244,7 @@ export default function ProfilePage() {
                   </span>
                 </div>
                 <p className="mb-1 text-sm text-slate-300">{user?.email}</p>
-                <p className="text-xs text-slate-400">Platform Administrator · FlyersSoft Learning Studio</p>
+                <p className="text-xs text-slate-400">Platform Administrator · Flyers Minds Flyers Minds</p>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
@@ -469,7 +469,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <p className="mb-1 text-sm text-[#3a4a52] dark:text-slate-300">{profileUser?.email}</p>
-              <p className="text-xs text-[#5f7077] dark:text-slate-400">AI/ML Intern · FlyersSoft Learning Studio · Since {joinDate}</p>
+              <p className="text-xs text-[#5f7077] dark:text-slate-400">AI/ML Intern · Flyers Minds Flyers Minds · Since {joinDate}</p>
             </div>
 
             {/* Mini stats */}
@@ -523,7 +523,7 @@ export default function ProfilePage() {
                 {/* Name + contact */}
                 <div className="border-b border-[#dbe5de] pb-5 dark:border-white/10">
                   <h2 className="font-heading text-2xl font-bold text-[#1a2a31] dark:text-white">{profileUser?.name}</h2>
-                  <p className="mt-0.5 text-sm font-semibold text-[#0f766e]">AI / ML Developer · FlyersSoft Intern</p>
+                  <p className="mt-0.5 text-sm font-semibold text-[#0f766e]">AI / ML Developer · Flyers Minds Intern</p>
                   <div className="mt-3 flex flex-wrap gap-4 text-xs text-[#5f7077] dark:text-slate-400">
                     <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{profileUser?.email}</span>
                     <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />Joined {joinDate}</span>
@@ -568,7 +568,7 @@ export default function ProfilePage() {
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                       <div>
                         <h4 className="text-sm font-bold text-[#1a2a31] dark:text-white">AI / ML Engineering Intern</h4>
-                        <p className="text-xs font-semibold text-[#0f766e]">FlyersSoft Learning Program · Chennai, India</p>
+                        <p className="text-xs font-semibold text-[#0f766e]">Flyers Minds Learning Program · Chennai, India</p>
                       </div>
                       <span className="shrink-0 rounded-full bg-[#e8f6f2] px-2.5 py-1 text-[10px] font-semibold text-[#0f766e] dark:bg-[#0f766e]/20">
                         {joinDate} – Present
@@ -636,7 +636,7 @@ export default function ProfilePage() {
                 <div className="rounded-xl border border-[#dbe5de] bg-[#f6f9f7] p-4 dark:border-white/10 dark:bg-slate-800/50">
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#0f766e]">Program Details</p>
                   <p className="text-xs text-[#3a4a52] dark:text-slate-400">
-                    FlyersSoft AI / ML Internship · 120 days · 6 modules · Python → FastAPI → Machine Learning → Deep Learning → RAG & Production AI → Capstone Project
+                    Flyers Minds AI / ML Internship · 120 days · 6 modules · Python → FastAPI → Machine Learning → Deep Learning → RAG & Production AI → Capstone Project
                   </p>
                 </div>
               </div>

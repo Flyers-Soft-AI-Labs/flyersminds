@@ -5,7 +5,7 @@ import { X, Send, MessageCircle, Bot, Trash2, ChevronDown, Maximize2, Minimize2 
 
 const WELCOME_MESSAGE = {
   role: 'assistant',
-  content: "Hi! I'm **FlyersBot** 👋\n\nI'm here to help you with any doubts about your AI/ML internship — Python, FastAPI, Machine Learning, Deep Learning, RAG, or anything in the curriculum.\n\nWhat would you like to know?",
+  content: "Hi! I'm **FlyersMind Bot** 👋\n\nI'm here to help you with any doubts about your AI/ML internship — Python, FastAPI, Machine Learning, Deep Learning, RAG, or anything in the curriculum.\n\nWhat would you like to know?",
   id: 'welcome',
 };
 
@@ -267,7 +267,7 @@ export default function ChatBot() {
               <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0f766e] bg-green-400" />
             </div>
             <div>
-              <p className="text-sm font-bold text-white leading-none">FlyersBot</p>
+              <p className="text-sm font-bold text-white leading-none">FlyersMind Bot</p>
               <p className="text-[10px] text-white/70 leading-none mt-0.5">AI Learning Assistant · drag to move</p>
             </div>
           </div>
