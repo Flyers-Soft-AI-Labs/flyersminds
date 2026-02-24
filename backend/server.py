@@ -509,7 +509,7 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
         messages.append({"role": "user", "content": data.message})
 
         completion = groq_client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="moonshotai/kimi-k2-instruct-0905",
             messages=messages,
             max_tokens=512,
             temperature=0.7,
