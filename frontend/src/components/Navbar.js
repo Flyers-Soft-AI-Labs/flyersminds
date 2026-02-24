@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../App';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon } from 'lucide-react';
+import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon, Settings } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -104,6 +104,14 @@ export default function Navbar() {
                       >
                         <User className="h-4 w-4" />
                         My Profile
+                      </button>
+
+                      <button
+                        onClick={() => { setShowProfileDropdown(false); navigate('/settings'); }}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 transition-all hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Settings
                       </button>
 
                       <div className="my-1 h-px bg-slate-200 dark:bg-white/5" />

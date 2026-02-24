@@ -49,7 +49,7 @@ export default function ResetPassword() {
 
       setSuccess(true);
       setTimeout(() => {
-        navigate('/');
+        navigate('/login');
       }, 3000);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to reset password. The link may have expired.');

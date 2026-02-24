@@ -145,7 +145,7 @@ export default function AdminLogin() {
 
           <div className="mt-6 border-t border-slate-200 dark:border-white/10 pt-4">
             <Link
-              to="/"
+              to="/login"
               className="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300"
             >
               <ArrowLeft className="h-4 w-4" />

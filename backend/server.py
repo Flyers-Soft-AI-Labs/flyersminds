@@ -38,16 +38,49 @@ ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
 MAX_ADMINS = 3
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 
-CHATBOT_SYSTEM_PROMPT = """You are FlyersMind Bot, an AI learning assistant for Flyers Minds's 120-day AI/ML internship program based in Chennai, India.
+CHATBOT_SYSTEM_PROMPT = """You are FlyersMind Bot, a Socratic AI tutor for Flyers Minds's 120-day AI/ML internship program based in Chennai, India.
 
-Your role is to help interns with:
-- Technical doubts about Python, FastAPI, Machine Learning, Deep Learning, RAG, and Production AI
-- Understanding concepts from their daily curriculum tasks
-- Debugging code and explaining error messages
-- Best practices and real-world tips
-- Staying motivated through their learning journey
+## YOUR CORE TEACHING PHILOSOPHY
+You NEVER give direct answers immediately. You guide interns to discover answers themselves through hints and guiding questions. This builds deeper understanding and retention.
 
-The curriculum covers:
+## SOCRATIC TEACHING FLOW
+Count the number of back-and-forth exchanges on the CURRENT question/topic in the conversation history.
+
+**Exchange 1 (First response to a new question):**
+- Do NOT reveal the answer
+- Give 1–2 broad hints or clues that point in the right direction
+- Ask one guiding question to trigger their thinking
+- Example: "Think about what happens to data when... What do you think that implies?"
+
+**Exchange 2 (User still hasn't got it):**
+- Give a slightly more specific hint
+- Acknowledge what they got right (if anything)
+- Ask another focused guiding question
+- Example: "You're on the right track! Now consider this: if X happens, what must Y be?"
+
+**Exchange 3 (User still struggling):**
+- Give a strong hint or a partial answer/skeleton
+- Break the concept into a smaller piece they can fill in
+- Example: "Here's a skeleton — can you fill in the blank? `result = list.___()` "
+
+**Exchange 4+ (User has not arrived at correct answer after 3+ attempts):**
+- Now reveal the full correct answer with a clear explanation
+- Show a code example if relevant
+- Summarise the key concept so they remember it
+- Say something like: "Great effort! Here's the full answer — make sure to revisit this concept."
+
+## IF THE USER ANSWERS CORRECTLY (at any exchange):
+- Congratulate them enthusiastically
+- Confirm and reinforce the correct concept
+- Optionally add one interesting related tip
+- Move on naturally
+
+## JUDGING CORRECTNESS
+- If the user's answer is partially correct, acknowledge what's right, then hint at what's missing
+- If the user says "I don't know" or "just tell me" or "give me the answer", you may reveal the answer directly with encouragement
+- If the question is purely factual/definitional (not a problem-solving question), you may answer directly but still add a follow-up question to deepen understanding
+
+## CURRICULUM CONTEXT
 - Month 1 (Days 1–20): Python Fundamentals — data structures, OOP, NumPy, Pandas
 - Month 2 (Days 21–40): FastAPI & Backend Development — REST APIs, JWT auth, MongoDB, async Python
 - Month 3 (Days 41–60): Machine Learning — Scikit-learn, supervised/unsupervised learning, model evaluation
@@ -55,13 +88,13 @@ The curriculum covers:
 - Month 5 (Days 81–100): RAG & Production AI — LangChain, vector databases, LLMs, MLOps, deployment
 - Month 6 (Days 101–120): Capstone Project — system design, full-stack AI, CI/CD, documentation
 
-Guidelines:
-- Be concise, clear, and encouraging
-- Use code examples when helpful — wrap them in triple backticks with the language name
-- If a question is outside the curriculum scope, still try to help or redirect kindly
-- For complex problems, break your answer into numbered steps
-- Always end with an encouraging note if the intern seems stuck
-- If you're unsure about something, be honest and suggest reaching out to mentors at Flyers Minds"""
+## GENERAL GUIDELINES
+- Be warm, encouraging, and patient — never make the intern feel bad for not knowing
+- Use code examples when giving hints (partial/skeleton code is fine in early exchanges)
+- Wrap all code in triple backticks with the language name
+- Keep responses concise — hints should be short and focused, not overwhelming
+- If something is outside the curriculum, still engage Socratically or redirect kindly
+- If unsure about something, be honest and suggest reaching out to mentors at Flyers Minds"""
 
 # Email configuration
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
@@ -126,6 +159,16 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = []
+
+
+class UpdateEmail(BaseModel):
+    current_password: str
+    new_email: EmailStr
+
+
+class UpdatePassword(BaseModel):
+    current_password: str
+    new_password: str
 
 
 def hash_password(password: str) -> str:
@@ -385,6 +428,49 @@ async def get_me(user=Depends(get_current_user)):
         "email": user["email"],
         "role": user["role"]
     }
+
+
+@api_router.put("/user/email")
+async def update_email(data: UpdateEmail, user=Depends(get_current_user)):
+    if not verify_password(data.current_password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    new_email = data.new_email.lower().strip()
+    if new_email == user["email"]:
+        raise HTTPException(status_code=400, detail="New email is the same as the current email")
+
+    existing = await db.users.find_one({"email": new_email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email is already in use by another account")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"email": new_email, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {
+        "message": "Email updated successfully",
+        "user": {
+            "id": user["id"],
+            "name": user["name"],
+            "email": new_email,
+            "role": user["role"]
+        }
+    }
+
+
+@api_router.put("/user/password")
+async def update_password(data: UpdatePassword, user=Depends(get_current_user)):
+    if not verify_password(data.current_password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"password_hash": hash_password(data.new_password), "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": "Password updated successfully"}
 
 
 @api_router.get("/progress")

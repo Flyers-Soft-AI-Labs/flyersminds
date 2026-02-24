@@ -5,7 +5,7 @@ import { X, Send, MessageCircle, Bot, Trash2, ChevronDown, Maximize2, Minimize2 
 
 const WELCOME_MESSAGE = {
   role: 'assistant',
-  content: "Hi! I'm **FlyersMind Bot** 👋\n\nI'm here to help you with any doubts about your AI/ML internship — Python, FastAPI, Machine Learning, Deep Learning, RAG, or anything in the curriculum.\n\nWhat would you like to know?",
+  content: "Hi! I'm **FlyersMind Bot** 👋\n\nI'm your Socratic learning guide for the AI/ML internship. Instead of giving you answers directly, I'll drop hints and guiding questions to help you **think it through** — that's how real learning sticks!\n\nIf you're truly stuck after a few tries, I'll reveal the full answer.\n\nWhat concept or problem would you like to explore?",
   id: 'welcome',
 };
 

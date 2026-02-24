@@ -184,3 +184,30 @@
   animation: rise 0.5s ease-out 0.15s forwards;
   opacity: 0;
 }
+
+/* Organic blob movement */
+@keyframes blob {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  25%       { transform: translate(40px, -55px) scale(1.08); }
+  50%       { transform: translate(-25px, 35px) scale(0.94); }
+  75%       { transform: translate(55px, 18px) scale(1.04); }
+}
+.animate-blob { animation: blob 14s ease-in-out infinite; }
+.animation-delay-2 { animation-delay: 2s; }
+.animation-delay-4 { animation-delay: 4s; }
+.animation-delay-6 { animation-delay: 6s; }
+
+/* Gradient border pulse */
+@keyframes border-glow {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+.animate-border-glow { animation: border-glow 3s ease-in-out infinite; }
+
+/* Floating */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float-slow { animation: float 9s ease-in-out infinite; }

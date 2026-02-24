@@ -221,7 +221,7 @@ export default function ProfilePage() {
         <main className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
 
           {/* Hero */}
-          <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] p-8 sm:p-10">
+          <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 via-slate-200 to-cyan-50 dark:from-[#0f2027] dark:via-[#203a43] dark:to-[#2c5364] border border-slate-200 dark:border-transparent p-8 sm:p-10">
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
               <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
@@ -238,13 +238,13 @@ export default function ProfilePage() {
               </div>
               <div className="flex-1">
                 <div className="mb-2 flex flex-wrap items-center gap-3">
-                  <h1 className="font-heading text-3xl font-bold text-white sm:text-4xl">{user?.name}</h1>
-                  <span className="rounded-full border border-yellow-500/40 bg-yellow-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-yellow-300">
+                  <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">{user?.name}</h1>
+                  <span className="rounded-full border border-yellow-500/40 bg-yellow-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-yellow-700 dark:text-yellow-300">
                     Administrator
                   </span>
                 </div>
-                <p className="mb-1 text-sm text-slate-300">{user?.email}</p>
-                <p className="text-xs text-slate-400">Platform Administrator · Flyers Minds Flyers Minds</p>
+                <p className="mb-1 text-sm text-slate-600 dark:text-slate-300">{user?.email}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Platform Administrator · Flyers Minds</p>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
@@ -253,7 +253,7 @@ export default function ProfilePage() {
                   { label: 'Active Today',value: activeToday,  color: 'text-orange-400' },
                   { label: 'Top Performers',value: topPerformers, color: 'text-purple-400' },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center backdrop-blur-sm">
+                  <div key={s.label} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 px-4 py-3 text-center backdrop-blur-sm">
                     <p className={`font-heading text-xl font-bold ${s.color}`}>{s.value}</p>
                     <p className="text-[10px] uppercase tracking-wider text-slate-400">{s.label}</p>
                   </div>

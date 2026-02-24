@@ -10,6 +10,8 @@ import Dashboard from './pages/Dashboard';
 import DayDetailPage from './pages/DayDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import LandingPage from './pages/LandingPage';
 import Background from './components/Background';
 import ChatBot from './components/ChatBot';
 import './App.css';
@@ -62,7 +64,8 @@ function App() {
             </div>
           ) : (
             <Routes>
-              <Route path="/" element={!token ? <AuthPage /> : user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={!token ? <AuthPage /> : user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />} />
               <Route path="/admin-login" element={!token ? <AdminLogin /> : user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/" replace />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -71,6 +74,7 @@ function App() {
               <Route path="/admin" element={token && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
               <Route path="/profile" element={token ? <ProfilePage /> : <Navigate to="/" replace />} />
               <Route path="/admin/profile/:userId" element={token && user?.role === 'admin' ? <ProfilePage /> : <Navigate to="/" replace />} />
+              <Route path="/settings" element={token ? <SettingsPage /> : <Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           )}
