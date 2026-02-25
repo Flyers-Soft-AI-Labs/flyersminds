@@ -30,7 +30,8 @@ import {
 
 export default function DayDetailPage() {
   const { dayNumber } = useParams();
-  const { token, API } = useAuth();
+  const { token, API, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
 
   const [dayData, setDayData] = useState(null);
@@ -116,7 +117,7 @@ export default function DayDetailPage() {
     allProgress.some((p) => p.day_number === dayNum && p.is_completed);
 
   const isDayUnlocked = (dayNum) =>
-    dayNum === 1 || isDayCompleted(dayNum - 1);
+    isAdmin || dayNum === 1 || isDayCompleted(dayNum - 1);
 
   const handleTaskToggle = async (taskId) => {
     const isCompleting = !completedTasks.includes(taskId);
@@ -196,7 +197,7 @@ export default function DayDetailPage() {
   const completionPct = Math.round((completedTasks.length / dayData.tasks.length) * 100);
   const isCompleted = completedTasks.length === dayData.tasks.length;
   const canNavigateToPrev = currentDay > 1;
-  const canNavigateToNext = currentDay < 120 && isCompleted;
+  const canNavigateToNext = currentDay < 120 && (isAdmin || isCompleted);
 
   const supportContacts = [
     { name: 'Krishna Kompalli', email: 'krishna.kompalli@flyerssoft.com' },
@@ -497,15 +498,15 @@ export default function DayDetailPage() {
                   return (
                     <label
                       key={task.id}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition-all ${checked
+                      className={`flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all ${isAdmin ? 'cursor-default' : 'cursor-pointer'} ${checked
                         ? 'border-green-500/20 bg-green-500/10'
                         : 'border-slate-300 dark:border-white/5 bg-slate-100 dark:bg-white/5 hover:border-slate-400 dark:hover:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10'
                         }`}
                     >
                       <Checkbox
                         checked={checked}
-                        disabled={loading[task.id]}
-                        onCheckedChange={() => handleTaskToggle(task.id)}
+                        disabled={isAdmin || loading[task.id]}
+                        onCheckedChange={() => !isAdmin && handleTaskToggle(task.id)}
                         className="mt-0.5 border-slate-400 dark:border-slate-600 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />
                       <span className={`text-sm leading-relaxed ${checked ? 'text-slate-500 line-through' : 'text-slate-700 dark:text-slate-200'}`}>

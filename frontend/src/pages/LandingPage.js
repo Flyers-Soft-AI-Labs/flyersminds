@@ -36,6 +36,7 @@ export default function LandingPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalTab, setModalTab] = useState('login');
+  const [pendingCourse, setPendingCourse] = useState('aiml');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
   const programsRef = useRef(null);
@@ -65,7 +66,8 @@ export default function LandingPage() {
 
   const handleCourseClick = (course) => {
     if (!course.active) { toast.info('Coming soon! Stay tuned.'); return; }
-    if (token) navigate('/dashboard'); else { setAuthError(''); setShowModal(true); }
+    if (token) navigate('/dashboard');
+    else { setPendingCourse(course.id); setModalTab('register'); setAuthError(''); setShowModal(true); }
   };
 
   const handleLogin = async (e) => {
@@ -82,7 +84,7 @@ export default function LandingPage() {
   const handleRegister = async (e) => {
     e.preventDefault(); setAuthLoading(true); setAuthError('');
     try {
-      const r = await axios.post(`${API}/auth/register`, { name: regName, email: regEmail, password: regPassword });
+      const r = await axios.post(`${API}/auth/register`, { name: regName, email: regEmail, password: regPassword, course: pendingCourse || 'aiml' });
       login(r.data.token, r.data.user); setShowModal(false); navigate('/dashboard');
       toast.success(`Welcome to Flyers Minds, ${r.data.user.name.split(' ')[0]}!`);
     } catch (e) { setAuthError(e.response?.data?.detail || 'Signup failed.'); }
@@ -92,7 +94,7 @@ export default function LandingPage() {
   const closeModal = () => { setShowModal(false); setAuthError(''); setLoginEmail(''); setLoginPassword(''); setRegName(''); setRegEmail(''); setRegPassword(''); };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#05080f] text-slate-900 dark:text-white">
+    <div className="min-h-screen text-slate-900 dark:text-white">
 
       {/* ══ NAVBAR ══ */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 lg:px-10 pt-4">
@@ -141,7 +143,7 @@ export default function LandingPage() {
       <section className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-24">
         {/* Large decorative text behind everything */}
         <div className="absolute inset-0 flex items-center justify-end pr-0 sm:pr-10 overflow-hidden pointer-events-none select-none">
-          <span className="font-heading font-black text-[22vw] leading-none bg-gradient-to-b from-slate-100 to-transparent dark:from-white/[0.03] dark:to-transparent bg-clip-text text-transparent tracking-tighter">
+          <span className="font-heading font-black text-[22vw] leading-none bg-gradient-to-b from-slate-400 to-slate-200/50 dark:from-white/[0.10] dark:to-white/[0.02] bg-clip-text text-transparent tracking-tighter">
             FM
           </span>
         </div>
@@ -235,28 +237,40 @@ export default function LandingPage() {
         </div>
 
         {!selectedCategory ? (
-          /* ── Category tiles (3-column grid) ── */
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {CATEGORIES.map((cat, i) => (
-              <ProgramTile key={cat.id} cat={cat} index={i} onSelect={() => setSelectedCategory(cat.id)} />
-            ))}
-
-            {/* Why strip */}
-            <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { icon: CheckCircle2, color: 'text-cyan-500', bg: 'bg-cyan-500/10', t: 'Structured Daily Tasks', d: 'Clear day-by-day curriculum — no guesswork.' },
-                { icon: Shield,       color: 'text-violet-500',bg: 'bg-violet-500/10',t: 'Mentor Support',        d: 'Direct access when you get stuck.' },
-                { icon: Play,         color: 'text-blue-500',  bg: 'bg-blue-500/10',  t: 'Real Projects',         d: 'Build, not just watch.' },
-                { icon: Trophy,       color: 'text-amber-500', bg: 'bg-amber-500/10', t: 'Certificate',           d: 'Verified, shareable credential.' },
-              ].map(({ icon: Icon, color, bg, t, d }) => (
-                <div key={t} className="rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50/80 dark:bg-white/[0.03] p-5">
-                  <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${bg} mb-3`}><Icon className={`h-4.5 w-4.5 ${color}`} /></div>
-                  <p className="font-bold text-sm text-slate-900 dark:text-white mb-1">{t}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{d}</p>
-                </div>
+          /* ── Category tiles + Why strip ── */
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {CATEGORIES.map((cat, i) => (
+                <ProgramTile key={cat.id} cat={cat} index={i} onSelect={() => setSelectedCategory(cat.id)} />
               ))}
             </div>
-          </div>
+
+            {/* ── Why Flyers Minds — full width, outside the 3-col grid ── */}
+            <div className="mt-20">
+              <div className="text-center mb-10">
+                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-2">Why Choose Us</p>
+                <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">Everything you need to succeed</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { icon: CheckCircle2, color: 'text-cyan-500',   bg: 'bg-cyan-500/10',   border: 'border-cyan-500/20',   t: 'Structured Daily Tasks', d: 'Clear day-by-day curriculum — no guesswork, no overwhelm.' },
+                  { icon: Shield,       color: 'text-violet-500', bg: 'bg-violet-500/10', border: 'border-violet-500/20', t: 'Mentor Support',         d: 'Direct access to mentors whenever you get stuck.' },
+                  { icon: Play,         color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: 'border-blue-500/20',   t: 'Real Projects',          d: 'Build actual deployable projects — not just watch videos.' },
+                  { icon: Trophy,       color: 'text-amber-500',  bg: 'bg-amber-500/10',  border: 'border-amber-500/20',  t: 'Verified Certificate',   d: 'Earn a shareable credential to showcase your skills.' },
+                ].map(({ icon: Icon, color, bg, border, t, d }) => (
+                  <div key={t} className={`rounded-2xl border ${border} dark:border-white/8 bg-white dark:bg-white/[0.03] p-7 flex flex-col gap-4 hover:shadow-lg transition-shadow`}>
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${bg}`}>
+                      <Icon className={`h-6 w-6 ${color}`} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-base text-slate-900 dark:text-white mb-2">{t}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         ) : (
           /* ── Courses view ── */
           <>
@@ -295,6 +309,68 @@ export default function LandingPage() {
             )}
           </>
         )}
+      </section>
+
+      {/* ══ CTA SECTION ══ */}
+      <section className="relative overflow-hidden py-32 px-6 lg:px-10">
+        {/* Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900" />
+
+        {/* Ambient blobs */}
+        <div className="absolute -top-32 left-1/3 h-[600px] w-[600px] rounded-full bg-cyan-500/10 blur-[140px] pointer-events-none" />
+        <div className="absolute -bottom-32 right-1/4 h-[500px] w-[500px] rounded-full bg-violet-600/12 blur-[120px] pointer-events-none" />
+
+        {/* Subtle grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:72px_72px] pointer-events-none" />
+
+        <div className="relative max-w-3xl mx-auto text-center">
+
+          {/* Live badge */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold text-cyan-400 mb-8 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            Now Enrolling — Cohort 2025
+          </div>
+
+          {/* Headline */}
+          <h2 className="font-heading font-black text-white leading-[1.05] tracking-tight mb-6" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
+            Ready to build<br />
+            <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-500 bg-clip-text text-transparent">
+              the future?
+            </span>
+          </h2>
+
+          {/* Subtitle */}
+          <p className="text-lg text-white/55 leading-relaxed max-w-xl mx-auto mb-12">
+            Join the cohort and start turning your curiosity about AI into real, deployable skills — structured daily tasks, real projects, and dedicated mentors.
+          </p>
+
+          {/* CTA row */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+            <button
+              onClick={() => { setModalTab('register'); setAuthError(''); setShowModal(true); }}
+              className="group flex items-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-9 py-4 text-sm font-bold text-white shadow-2xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:scale-[1.03] active:scale-[0.98] transition-all"
+            >
+              Apply for Free
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <p className="text-xs text-white/30 font-medium tracking-wide">
+              No cost &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Just your commitment.
+            </p>
+          </div>
+
+          {/* Feature pills */}
+          <div className="mt-14 flex flex-wrap justify-center gap-3">
+            {['120-Day Curriculum', 'Daily Tasks & Projects', 'Mentor Support', 'Verified Certificate', 'Chennai, India'].map((feat) => (
+              <span
+                key={feat}
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/45 backdrop-blur-sm"
+              >
+                {feat}
+              </span>
+            ))}
+          </div>
+
+        </div>
       </section>
 
       {/* ══ FOOTER ══ */}
@@ -338,6 +414,7 @@ export default function LandingPage() {
                     <li><button className="hover:text-slate-900 dark:hover:text-white transition" onClick={() => { setModalTab('login'); setShowModal(true); }}>Log In</button></li>
                     <li><button className="hover:text-slate-900 dark:hover:text-white transition" onClick={() => { setModalTab('register'); setShowModal(true); }}>Sign Up</button></li>
                     <li><Link to="/forgot-password" className="hover:text-slate-900 dark:hover:text-white transition">Forgot Password</Link></li>
+                    <li><Link to="/admin-login" className="hover:text-slate-900 dark:hover:text-white transition">Admin Access</Link></li>
                   </>
                 )}
               </ul>
@@ -394,6 +471,11 @@ export default function LandingPage() {
                   <MBtn loading={authLoading} label="Create Account & Enroll" />
                 </form>
               )}
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-white/5 text-center">
+                <Link to="/admin-login" onClick={closeModal} className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">
+                  <Shield className="h-3 w-3" /> Admin access
+                </Link>
+              </div>
             </div>
           </div>
         </div>

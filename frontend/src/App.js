@@ -51,9 +51,14 @@ function App() {
     window.location.replace('/');
   };
 
+  const updateUser = (updatedUser) => {
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   return (
     <ThemeProvider>
-      <AuthContext.Provider value={{ token, user, login, logout, API }}>
+      <AuthContext.Provider value={{ token, user, login, logout, updateUser, API }}>
         <Background />
         <BrowserRouter>
           <Toaster position="top-center" richColors />
@@ -69,8 +74,8 @@ function App() {
               <Route path="/admin-login" element={!token ? <AdminLogin /> : user?.role === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/" replace />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
-              <Route path="/dashboard" element={token && user?.role === 'intern' ? <Dashboard /> : <Navigate to="/" replace />} />
-              <Route path="/dashboard/day/:dayNumber" element={token && user?.role === 'intern' ? <DayDetailPage /> : <Navigate to="/" replace />} />
+              <Route path="/dashboard" element={token && (user?.role === 'intern' || user?.role === 'admin') ? <Dashboard /> : <Navigate to="/" replace />} />
+              <Route path="/dashboard/day/:dayNumber" element={token && (user?.role === 'intern' || user?.role === 'admin') ? <DayDetailPage /> : <Navigate to="/" replace />} />
               <Route path="/admin" element={token && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
               <Route path="/profile" element={token ? <ProfilePage /> : <Navigate to="/" replace />} />
               <Route path="/admin/profile/:userId" element={token && user?.role === 'admin' ? <ProfilePage /> : <Navigate to="/" replace />} />

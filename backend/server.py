@@ -123,6 +123,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     admin_code: Optional[str] = None
+    course: Optional[str] = 'aiml'
 
 
 class UserLogin(BaseModel):
@@ -169,6 +170,10 @@ class UpdateEmail(BaseModel):
 class UpdatePassword(BaseModel):
     current_password: str
     new_password: str
+
+
+class UpdateAvatar(BaseModel):
+    avatar: str  # base64 data URL
 
 
 def hash_password(password: str) -> str:
@@ -254,6 +259,7 @@ async def register(data: UserRegister):
         "email": data.email,
         "password_hash": hash_password(data.password),
         "role": role,
+        "course": data.course if role == "intern" else None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
@@ -426,7 +432,8 @@ async def get_me(user=Depends(get_current_user)):
         "id": user["id"],
         "name": user["name"],
         "email": user["email"],
-        "role": user["role"]
+        "role": user["role"],
+        "avatar": user.get("avatar")
     }
 
 
@@ -456,6 +463,17 @@ async def update_email(data: UpdateEmail, user=Depends(get_current_user)):
             "role": user["role"]
         }
     }
+
+
+@api_router.put("/user/avatar")
+async def update_avatar(data: UpdateAvatar, user=Depends(get_current_user)):
+    if not data.avatar.startswith("data:image/"):
+        raise HTTPException(status_code=400, detail="Invalid image format")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"avatar": data.avatar, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": "Avatar updated successfully", "avatar": data.avatar}
 
 
 @api_router.put("/user/password")
@@ -541,12 +559,20 @@ async def complete_day(data: dict, user=Depends(get_current_user)):
 
 
 @api_router.get("/admin/users")
-async def get_all_users(user=Depends(get_current_user)):
+async def get_all_users(course: Optional[str] = None, user=Depends(get_current_user)):
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
+    query = {"role": "intern"}
+    if course:
+        if course == "aiml":
+            # Include interns with course='aiml' AND legacy interns with no course field
+            query["$or"] = [{"course": "aiml"}, {"course": {"$exists": False}}, {"course": None}]
+        else:
+            query["course"] = course
+
     users = await db.users.find(
-        {"role": "intern"},
+        query,
         {"_id": 0, "password_hash": 0}
     ).to_list(1000)
 

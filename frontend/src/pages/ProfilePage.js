@@ -227,10 +227,13 @@ export default function ProfilePage() {
               <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
             </div>
             <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
-              <div className="relative">
+              <div className="relative shrink-0">
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60 blur" />
-                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-bold text-white shadow-2xl">
-                  {user?.name?.charAt(0)?.toUpperCase()}
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-bold text-white shadow-2xl overflow-hidden">
+                  {profileUser?.avatar
+                    ? <img src={profileUser.avatar} alt="avatar" className="h-24 w-24 object-cover" />
+                    : <span>{user?.name?.charAt(0)?.toUpperCase()}</span>
+                  }
                 </div>
                 <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-sm shadow-lg">
                   <Shield className="h-4 w-4 text-yellow-900" />
@@ -447,8 +450,11 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative shrink-0">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60 blur" />
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-bold text-white shadow-2xl">
-                {profileUser?.name?.charAt(0)?.toUpperCase()}
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-bold text-white shadow-2xl overflow-hidden">
+                {profileUser?.avatar
+                  ? <img src={profileUser.avatar} alt="avatar" className="h-24 w-24 object-cover" />
+                  : <span>{profileUser?.name?.charAt(0)?.toUpperCase()}</span>
+                }
               </div>
               {completedDays >= 120 && (
                 <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-sm shadow-lg">🏆</div>
