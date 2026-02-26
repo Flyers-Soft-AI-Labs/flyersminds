@@ -27,6 +27,10 @@ import {
   Cloud,
   Layers,
   ArrowRight,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -75,6 +79,12 @@ export default function Dashboard() {
   const [browsingCourses, setBrowsingCourses] = useState(false);
   const [adminSelectedCategory, setAdminSelectedCategory] = useState(null);
   const [adminSelectedCourse, setAdminSelectedCourse] = useState(null);
+  // Admin curriculum editing states
+  const [curriculumOverrides, setCurriculumOverrides] = useState({});
+  const [editingDay, setEditingDay] = useState(null);
+  const [editTopic, setEditTopic] = useState('');
+  const [editVideos, setEditVideos] = useState([]);
+  const [editSaving, setEditSaving] = useState(false);
 
   const openCourseBrowser = () => {
     setAdminSelectedCategory(null);
@@ -86,6 +96,60 @@ export default function Dashboard() {
     setBrowsingCourses(false);
     setAdminSelectedCategory(null);
     setAdminSelectedCourse(null);
+  };
+
+  const fetchOverrides = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await axios.get(`${API}/admin/curriculum/overrides`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const map = {};
+      res.data.forEach((o) => { map[o.day_number] = o; });
+      setCurriculumOverrides(map);
+    } catch (err) {
+      console.error('Failed to fetch curriculum overrides', err);
+    }
+  }, [API, token, isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin && adminSelectedCourse) {
+      fetchOverrides();
+    }
+  }, [isAdmin, adminSelectedCourse, fetchOverrides]);
+
+  const handleEditDay = (dayNum) => {
+    const dayData = curriculum.find((d) => d.day === dayNum);
+    const override = curriculumOverrides[dayNum];
+    setEditingDay(dayNum);
+    setEditTopic(override?.topic ?? dayData?.topic ?? '');
+    setEditVideos(
+      override?.resource_links ??
+      dayData?.resourceLinks?.map((r) => ({ title: r.title, url: r.url })) ??
+      []
+    );
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDay) return;
+    setEditSaving(true);
+    try {
+      await axios.put(
+        `${API}/admin/curriculum/${editingDay}`,
+        { topic: editTopic, resource_links: editVideos },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCurriculumOverrides((prev) => ({
+        ...prev,
+        [editingDay]: { ...(prev[editingDay] || {}), topic: editTopic, resource_links: editVideos },
+      }));
+      toast.success('Day updated successfully!');
+      setEditingDay(null);
+    } catch (err) {
+      toast.error('Failed to save changes');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const fetchProgress = useCallback(async () => {
@@ -406,13 +470,16 @@ export default function Dashboard() {
                   isDayCompleted={isDayCompleted}
                   getDayCompletionPercent={getDayCompletionPercent}
                   handleDayClick={handleDayClick}
+                  isAdmin={isAdmin}
+                  overrides={curriculumOverrides}
+                  onEditDay={handleEditDay}
                 />
               </>
             )}
           </>
         )}
 
-        {/* Intern curriculum (always visible) or Admin curriculum placeholder */}
+        {/* Intern curriculum (always visible) */}
         {!isAdmin && (
           <CurriculumTabs
             months={months}
@@ -426,6 +493,120 @@ export default function Dashboard() {
           />
         )}
       </main>
+
+      {/* Admin Edit Day Modal */}
+      {editingDay && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => !editSaving && setEditingDay(null)}
+        >
+          <div
+            className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-6 py-4 bg-slate-50 dark:bg-slate-800/50">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Edit Day {editingDay}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Customize topic and learning resources</p>
+              </div>
+              <button
+                onClick={() => setEditingDay(null)}
+                disabled={editSaving}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 max-h-[65vh] overflow-y-auto">
+              {/* Topic */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-white mb-2">Topic</label>
+                <input
+                  value={editTopic}
+                  onChange={(e) => setEditTopic(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow"
+                  placeholder="Day topic..."
+                />
+              </div>
+
+              {/* YouTube Resources */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-white">YouTube Resources</label>
+                  <button
+                    onClick={() => setEditVideos((v) => [...v, { title: '', url: '' }])}
+                    className="flex items-center gap-1 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/30 px-3 py-1.5 text-xs font-semibold text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add Video
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {editVideos.map((v, i) => (
+                    <div key={i} className="flex gap-2 items-start rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-800/50 p-3">
+                      <div className="flex-1 space-y-2">
+                        <input
+                          value={v.title}
+                          onChange={(e) => {
+                            const updated = [...editVideos];
+                            updated[i] = { ...updated[i], title: e.target.value };
+                            setEditVideos(updated);
+                          }}
+                          placeholder="Video title..."
+                          className="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        />
+                        <input
+                          value={v.url}
+                          onChange={(e) => {
+                            const updated = [...editVideos];
+                            updated[i] = { ...updated[i], url: e.target.value };
+                            setEditVideos(updated);
+                          }}
+                          placeholder="YouTube URL (e.g. https://youtu.be/...)"
+                          className="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setEditVideos((vids) => vids.filter((_, idx) => idx !== i))}
+                        className="mt-1 rounded-lg p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 transition-colors"
+                        title="Remove video"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {editVideos.length === 0 && (
+                    <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4 rounded-xl border border-dashed border-slate-300 dark:border-white/10">
+                      No videos added yet. Click "Add Video" to add one.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-white/10 px-6 py-4 bg-slate-50 dark:bg-slate-800/50">
+              <button
+                onClick={() => setEditingDay(null)}
+                disabled={editSaving}
+                className="rounded-xl border border-slate-300 dark:border-white/10 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editSaving}
+                className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2 text-sm font-semibold text-white hover:from-cyan-500 hover:to-blue-500 disabled:opacity-60 transition-all shadow-md shadow-cyan-500/20"
+              >
+                {editSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -434,7 +615,7 @@ function Button({ className, ...props }) {
   return <button className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 ${className}`} {...props} />
 }
 
-function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDayUnlocked, isDayCompleted, getDayCompletionPercent, handleDayClick }) {
+function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDayUnlocked, isDayCompleted, getDayCompletionPercent, handleDayClick, isAdmin = false, overrides = {}, onEditDay }) {
   return (
     <Tabs value={activeMonth} onValueChange={setActiveMonth} className="w-full">
       <div className="mb-8 overflow-x-auto pb-2">
@@ -504,74 +685,97 @@ function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDay
                       const unlocked = isDayUnlocked(dayNum);
                       const completed = isDayCompleted(dayNum);
                       const completionPct = getDayCompletionPercent(dayNum);
-                      const lowerTopic = dayData.topic.toLowerCase();
+                      const override = overrides[dayNum];
+                      const displayTopic = override?.topic ?? dayData.topic;
+                      const lowerTopic = displayTopic.toLowerCase();
                       const isMiniProject =
                         lowerTopic.includes('mini project') ||
                         lowerTopic.includes('capstone') ||
                         lowerTopic.includes('final project');
 
                       return (
-                        <button
+                        <div
                           key={dayNum}
-                          onClick={() => handleDayClick(dayNum, unlocked)}
-                          className={`group flex w-full items-center gap-5 px-6 py-4 text-left transition-all ${unlocked
-                            ? 'hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer'
-                            : 'cursor-not-allowed hover:bg-slate-50 dark:hover:bg-transparent'
+                          className={`group flex w-full items-center transition-all ${unlocked
+                            ? 'hover:bg-slate-100 dark:hover:bg-white/5'
+                            : 'hover:bg-slate-50 dark:hover:bg-transparent'
                             }`}
                         >
-                          <div className="shrink-0 relative">
-                            {completed ? (
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
-                                <CheckCircle2 className="h-6 w-6" />
-                              </div>
-                            ) : unlocked ? (
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-shadow">
-                                <Circle className="h-6 w-6" />
-                              </div>
-                            ) : (
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-300 dark:bg-slate-800 text-slate-600 dark:text-slate-500">
-                                <Lock className="h-5 w-5" />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                              <span className={`text-xs font-bold uppercase tracking-wider ${unlocked ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-600 dark:text-slate-500'}`}>
-                                Day {dayNum}
-                              </span>
-
-                              {!unlocked && (
-                                <Badge variant="secondary" className="bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-400 dark:border-slate-700">
-                                  <Lock className="mr-1 h-3 w-3" />
-                                  Locked
-                                </Badge>
-                              )}
-
-                              {isMiniProject && (
-                                <Badge className="bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 border-amber-500/30 hover:bg-amber-500/30">
-                                  <Trophy className="mr-1 h-3 w-3" />
-                                  Project
-                                </Badge>
+                          <button
+                            onClick={() => handleDayClick(dayNum, unlocked)}
+                            className={`flex flex-1 items-center gap-5 px-6 py-4 text-left ${unlocked ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                          >
+                            <div className="shrink-0 relative">
+                              {completed ? (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
+                                  <CheckCircle2 className="h-6 w-6" />
+                                </div>
+                              ) : unlocked ? (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-shadow">
+                                  <Circle className="h-6 w-6" />
+                                </div>
+                              ) : (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-300 dark:bg-slate-800 text-slate-600 dark:text-slate-500">
+                                  <Lock className="h-5 w-5" />
+                                </div>
                               )}
                             </div>
 
-                            <p className={`truncate text-sm font-medium ${unlocked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
-                              {dayData.topic}
-                            </p>
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                                <span className={`text-xs font-bold uppercase tracking-wider ${unlocked ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-600 dark:text-slate-500'}`}>
+                                  Day {dayNum}
+                                </span>
 
-                            {unlocked && !completed && completionPct > 0 && (
-                              <div className="mt-2 flex items-center gap-3">
-                                <Progress value={completionPct} className="h-1.5 w-24 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-cyan-500" />
-                                <span className="text-[10px] text-slate-500 dark:text-slate-400">{completionPct}%</span>
+                                {!unlocked && (
+                                  <Badge variant="secondary" className="bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-400 dark:border-slate-700">
+                                    <Lock className="mr-1 h-3 w-3" />
+                                    Locked
+                                  </Badge>
+                                )}
+
+                                {isMiniProject && (
+                                  <Badge className="bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 border-amber-500/30 hover:bg-amber-500/30">
+                                    <Trophy className="mr-1 h-3 w-3" />
+                                    Project
+                                  </Badge>
+                                )}
+
+                                {isAdmin && override?.topic && (
+                                  <Badge className="bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 border-violet-300 dark:border-violet-500/30">
+                                    <Pencil className="mr-1 h-3 w-3" />
+                                    Edited
+                                  </Badge>
+                                )}
                               </div>
-                            )}
-                          </div>
 
-                          {unlocked && (
-                            <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400" />
+                              <p className={`truncate text-sm font-medium ${unlocked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                                {displayTopic}
+                              </p>
+
+                              {unlocked && !completed && completionPct > 0 && (
+                                <div className="mt-2 flex items-center gap-3">
+                                  <Progress value={completionPct} className="h-1.5 w-24 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-cyan-500" />
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">{completionPct}%</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {unlocked && (
+                              <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400" />
+                            )}
+                          </button>
+
+                          {isAdmin && onEditDay && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onEditDay(dayNum); }}
+                              className="mr-4 flex-shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all opacity-0 group-hover:opacity-100"
+                              title={`Edit Day ${dayNum}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
                           )}
-                        </button>
+                        </div>
                       );
                     })}
                   </div>

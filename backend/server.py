@@ -10,12 +10,11 @@ from pathlib import Path
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 import uuid
+import random
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import httpx
 from groq import AsyncGroq
 
 ROOT_DIR = Path(__file__).parent
@@ -88,20 +87,33 @@ Count the number of back-and-forth exchanges on the CURRENT question/topic in th
 - Month 5 (Days 81–100): RAG & Production AI — LangChain, vector databases, LLMs, MLOps, deployment
 - Month 6 (Days 101–120): Capstone Project — system design, full-stack AI, CI/CD, documentation
 
+## SCOPE — STRICT BOUNDARY
+You ONLY answer questions that are directly related to the Flyers Minds 120-day AI/ML internship curriculum listed above. This includes:
+- Python, NumPy, Pandas, OOP
+- FastAPI, REST APIs, JWT, MongoDB, async Python
+- Machine Learning, Scikit-learn, model evaluation
+- Deep Learning, TensorFlow, PyTorch, CNN, RNN
+- RAG, LangChain, LLMs, vector databases, MLOps, deployment
+- Capstone project topics, system design, full-stack AI
+
+If a question is about ANYTHING outside this scope (e.g., general trivia, cooking, sports, politics, unrelated programming languages, personal advice, current events, etc.), respond with exactly:
+"That's outside the scope of the Flyers Minds AI/ML curriculum. I can only help with topics covered in your internship program. Feel free to ask me anything related to Python, ML, Deep Learning, FastAPI, or your capstone project!"
+
+Do NOT attempt to answer out-of-scope questions even partially. Redirect immediately.
+
 ## GENERAL GUIDELINES
 - Be warm, encouraging, and patient — never make the intern feel bad for not knowing
 - Use code examples when giving hints (partial/skeleton code is fine in early exchanges)
 - Wrap all code in triple backticks with the language name
 - Keep responses concise — hints should be short and focused, not overwhelming
-- If something is outside the curriculum, still engage Socratically or redirect kindly
-- If unsure about something, be honest and suggest reaching out to mentors at Flyers Minds"""
+- If unsure about something within the curriculum, be honest and suggest reaching out to mentors at Flyers Minds"""
 
-# Email configuration
-SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
-SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+# Email configuration (Gmail SMTP)
 SMTP_EMAIL = os.environ.get('SMTP_EMAIL', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+FROM_NAME = os.environ.get('FROM_NAME', 'Flyers Minds')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
 
 app = FastAPI()
 
@@ -141,8 +153,9 @@ class ForgotPassword(BaseModel):
     email: EmailStr
 
 
-class ResetPassword(BaseModel):
-    token: str
+class ResetWithOTP(BaseModel):
+    email: EmailStr
+    otp: str
     new_password: str
 
 
@@ -176,6 +189,11 @@ class UpdateAvatar(BaseModel):
     avatar: str  # base64 data URL
 
 
+class CurriculumOverride(BaseModel):
+    topic: Optional[str] = None
+    resource_links: Optional[List[dict]] = None
+
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -193,31 +211,30 @@ def create_token(user_id: str, role: str, expires_delta: timedelta = timedelta(d
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
-def create_reset_token(email: str) -> str:
-    payload = {
-        "email": email,
-        "type": "password_reset",
-        "exp": datetime.now(timezone.utc) + timedelta(hours=1)  # 1 hour expiry
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
 
 async def send_email(to_email: str, subject: str, html_content: str):
-    """Send email using SMTP"""
+    """Send email via Gmail SMTP using an App Password"""
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        print("WARNING: SMTP_EMAIL or SMTP_PASSWORD not set in .env — email not sent.")
+        return False
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    import asyncio
     try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = SMTP_EMAIL
-        msg['To'] = to_email
-        
-        html_part = MIMEText(html_content, 'html')
-        msg.attach(html_part)
-        
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_EMAIL, SMTP_PASSWORD)
-            server.send_message(msg)
-        
+        def _send():
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = f"{FROM_NAME} <{SMTP_EMAIL}>"
+            msg['To'] = to_email
+            msg.attach(MIMEText(html_content, 'html'))
+            with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                server.ehlo()
+                server.starttls()
+                server.login(SMTP_EMAIL, SMTP_PASSWORD)
+                server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        await asyncio.get_event_loop().run_in_executor(None, _send)
+        print(f"Email sent to {to_email}")
         return True
     except Exception as e:
         print(f"Error sending email: {str(e)}")
@@ -327,103 +344,71 @@ async def admin_login(data: AdminLogin):
 async def forgot_password(data: ForgotPassword):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user:
-        # Don't reveal if email exists or not for security
-        return {"message": "If the email exists, a reset link has been sent"}
-    
-    # Create reset token
-    reset_token = create_reset_token(data.email)
-    
-    # Store reset token in database
+        return {"message": "If the email exists, an OTP has been sent"}
+
+    otp = str(random.randint(100000, 999999))
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+
     await db.password_resets.update_one(
         {"email": data.email},
-        {
-            "$set": {
-                "token": reset_token,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "used": False
-            }
-        },
+        {"$set": {
+            "otp": otp,
+            "expires_at": expires_at.isoformat(),
+            "used": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }},
         upsert=True
     )
-    
-    # Send email
-    reset_link = f"{FRONTEND_URL}/reset-password/{reset_token}"
+
     html_content = f"""
     <html>
-        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; text-align: center;">
-                <h1 style="color: white; margin: 0;">Password Reset Request</h1>
-            </div>
-            <div style="background: #f8fafc; padding: 30px; border-radius: 10px; margin-top: 20px;">
-                <h2 style="color: #1e293b;">Hello {user['name']},</h2>
-                <p style="color: #475569; line-height: 1.6;">
-                    We received a request to reset your password for your Flyers Soft Learning Platform account.
-                </p>
-                <p style="color: #475569; line-height: 1.6;">
-                    Click the button below to reset your password. This link will expire in 1 hour.
-                </p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{reset_link}" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: bold;">
-                        Reset Password
-                    </a>
-                </div>
-                <p style="color: #94a3b8; font-size: 14px;">
-                    If you didn't request this, you can safely ignore this email.
-                </p>
-                <p style="color: #94a3b8; font-size: 14px;">
-                    Or copy and paste this link: <br>
-                    <a href="{reset_link}" style="color: #667eea;">{reset_link}</a>
-                </p>
-            </div>
-            <div style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 12px;">
-                <p>Flyers Soft Learning Platform</p>
-            </div>
-        </body>
+      <body style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px; background: #f8fafc;">
+        <div style="background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%); padding: 32px; border-radius: 16px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 22px;">Flyers Minds</h1>
+          <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Password Reset</p>
+        </div>
+        <div style="background: white; padding: 32px; border-radius: 16px; margin-top: 16px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+          <p style="color: #475569; margin: 0 0 24px;">Hi {user['name']}, use the OTP below to reset your password. It expires in <strong>10 minutes</strong>.</p>
+          <div style="background: #f1f5f9; border-radius: 12px; padding: 24px; display: inline-block; min-width: 200px;">
+            <span style="font-size: 40px; font-weight: 800; letter-spacing: 10px; color: #0f172a;">{otp}</span>
+          </div>
+          <p style="color: #94a3b8; font-size: 13px; margin: 24px 0 0;">If you didn't request this, you can safely ignore this email.</p>
+        </div>
+      </body>
     </html>
     """
-    
-    await send_email(data.email, "Reset Your Password - Flyers Soft Learning", html_content)
-    
-    return {"message": "If the email exists, a reset link has been sent"}
+
+    await send_email(data.email, "Your Password Reset OTP - Flyers Minds", html_content)
+    return {"message": "If the email exists, an OTP has been sent"}
 
 
 @api_router.post("/auth/reset-password")
-async def reset_password(data: ResetPassword):
-    try:
-        # Verify token
-        payload = jwt.decode(data.token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        if payload.get("type") != "password_reset":
-            raise HTTPException(status_code=400, detail="Invalid token")
-        
-        email = payload.get("email")
-        
-        # Check if token has been used
-        reset_record = await db.password_resets.find_one({"email": email, "token": data.token})
-        if not reset_record or reset_record.get("used"):
-            raise HTTPException(status_code=400, detail="Invalid or expired reset link")
-        
-        # Update password
-        user = await db.users.find_one({"email": email})
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        await db.users.update_one(
-            {"email": email},
-            {"$set": {"password_hash": hash_password(data.new_password)}}
-        )
-        
-        # Mark token as used
-        await db.password_resets.update_one(
-            {"email": email, "token": data.token},
-            {"$set": {"used": True}}
-        )
-        
-        return {"message": "Password reset successfully"}
-    
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=400, detail="Reset link has expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=400, detail="Invalid reset link")
+async def reset_password(data: ResetWithOTP):
+    record = await db.password_resets.find_one({"email": data.email})
+    if not record or record.get("used"):
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+    expires_at = datetime.fromisoformat(record["expires_at"])
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="OTP has expired. Please request a new one.")
+
+    if record["otp"] != data.otp:
+        raise HTTPException(status_code=400, detail="Incorrect OTP. Please try again.")
+
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    await db.users.update_one(
+        {"email": data.email},
+        {"$set": {"password_hash": hash_password(data.new_password)}}
+    )
+
+    await db.password_resets.update_one(
+        {"email": data.email},
+        {"$set": {"used": True}}
+    )
+
+    return {"message": "Password reset successfully"}
 
 
 @api_router.get("/auth/me")
@@ -641,6 +626,40 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
             raise HTTPException(status_code=502, detail="rate_limit")
         else:
             raise HTTPException(status_code=502, detail="service_error")
+
+
+@api_router.get("/curriculum/{day_number}")
+async def get_curriculum_override(day_number: int, user=Depends(get_current_user)):
+    override = await db.curriculum_overrides.find_one({"day_number": day_number}, {"_id": 0})
+    return override or {}
+
+
+@api_router.get("/admin/curriculum/overrides")
+async def get_all_curriculum_overrides(user=Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    overrides = await db.curriculum_overrides.find({}, {"_id": 0}).to_list(1000)
+    return overrides
+
+
+@api_router.put("/admin/curriculum/{day_number}")
+async def update_curriculum_day(day_number: int, data: CurriculumOverride, user=Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    update_doc = {
+        "day_number": day_number,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    if data.topic is not None:
+        update_doc["topic"] = data.topic
+    if data.resource_links is not None:
+        update_doc["resource_links"] = data.resource_links
+    await db.curriculum_overrides.update_one(
+        {"day_number": day_number},
+        {"$set": update_doc},
+        upsert=True
+    )
+    return {"message": "Curriculum updated", "day_number": day_number}
 
 
 @api_router.get("/health")

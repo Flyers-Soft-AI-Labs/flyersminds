@@ -54,8 +54,11 @@ export default function AdminDashboard() {
   const { token, API } = useAuth();
   const navigate = useNavigate();
 
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const internshipCategory = CATEGORIES.find((c) => c.id === 'internship');
+  const aimlCourse = internshipCategory.courses.find((c) => c.id === 'aiml');
+
+  const [selectedCategory, setSelectedCategory] = useState(internshipCategory);
+  const [selectedCourse, setSelectedCourse] = useState(aimlCourse);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedUser, setExpandedUser] = useState(null);
@@ -64,6 +67,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchCourseCounts();
+    fetchUsers('aiml');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -168,7 +172,7 @@ export default function AdminDashboard() {
     ? `Interns enrolled in ${selectedCourse.title} · ${selectedCourse.subtitle}`
     : selectedCategory
     ? `${selectedCategory.courses.length} course${selectedCategory.courses.length !== 1 ? 's' : ''} · ${getCategoryInternCount(selectedCategory)} intern${getCategoryInternCount(selectedCategory) !== 1 ? 's' : ''}`
-    : 'Choose a category to view enrolled interns and monitor their progress.';
+    : 'Select a course to view enrolled interns and monitor their progress.';
 
   return (
     <div className="mesh-bg min-h-screen pb-12">
@@ -181,28 +185,13 @@ export default function AdminDashboard() {
           <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               {/* Breadcrumb */}
-              {(selectedCategory || selectedCourse) && (
+              {selectedCourse && (
                 <div className="mb-3 flex items-center gap-1.5 text-xs text-slate-400">
-                  <button onClick={handleBackToCategories} className="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
-                    Dashboard
+                  <button onClick={handleBackToCourses} className="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
+                    Courses
                   </button>
-                  {selectedCategory && (
-                    <>
-                      <ChevronLeft className="h-3 w-3 rotate-180" />
-                      <button
-                        onClick={selectedCourse ? handleBackToCourses : undefined}
-                        className={selectedCourse ? 'hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors' : 'text-slate-600 dark:text-slate-300 font-semibold'}
-                      >
-                        {selectedCategory.label}
-                      </button>
-                    </>
-                  )}
-                  {selectedCourse && (
-                    <>
-                      <ChevronLeft className="h-3 w-3 rotate-180" />
-                      <span className="text-slate-600 dark:text-slate-300 font-semibold">{selectedCourse.title}</span>
-                    </>
-                  )}
+                  <ChevronLeft className="h-3 w-3 rotate-180" />
+                  <span className="text-slate-600 dark:text-slate-300 font-semibold">{selectedCourse.title}</span>
                 </div>
               )}
               <p className="kicker mb-3"><Sparkles className="h-3.5 w-3.5" />Admin Intelligence</p>
@@ -216,11 +205,6 @@ export default function AdminDashboard() {
                   <ChevronLeft className="h-4 w-4" /> Back to Courses
                 </button>
               )}
-              {selectedCategory && !selectedCourse && (
-                <button onClick={handleBackToCategories} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">
-                  <ChevronLeft className="h-4 w-4" /> All Categories
-                </button>
-              )}
               <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors">
                 <BookOpen className="h-4 w-4" /> Browse Course
               </button>
@@ -228,57 +212,6 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        {/* ══ LEVEL 1 — Category tiles ══ */}
-        {!selectedCategory && (
-          <>
-            <p className="mb-5 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Choose a Category</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {CATEGORIES.map((cat, i) => {
-                const { Icon, gradient } = cat;
-                const internCount = getCategoryInternCount(cat);
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleCategorySelect(cat)}
-                    className="group relative w-full overflow-hidden rounded-2xl sm:rounded-3xl h-72 text-left focus:outline-none cursor-pointer"
-                  >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} transition-transform duration-700 group-hover:scale-[1.02]`} />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:20px_20px]" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/50" />
-                    <div className="absolute top-4 right-4 opacity-10 text-white pointer-events-none">
-                      <Icon className="h-24 w-24" />
-                    </div>
-                    <div className="absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/12 to-transparent -translate-x-full group-hover:translate-x-[200%] transition-transform duration-700" />
-
-                    <div className="relative h-full flex flex-col justify-between p-7">
-                      <div className="flex items-start justify-between">
-                        <span className="font-heading font-black text-[52px] leading-none text-white/10 select-none">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                        <div className="h-11 w-11 rounded-2xl bg-white/15 flex items-center justify-center group-hover:bg-white/25 transition">
-                          <Icon className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.25em] mb-2">{cat.sublabel}</p>
-                        <h3 className="font-heading text-xl font-extrabold text-white mb-2 leading-tight">{cat.label}</h3>
-                        <div className="flex items-center justify-between mt-4">
-                          <div>
-                            <p className="text-sm font-bold text-white">{cat.courses.length} course{cat.courses.length !== 1 ? 's' : ''}</p>
-                            <p className="text-[10px] text-white/50">{internCount} intern{internCount !== 1 ? 's' : ''} enrolled</p>
-                          </div>
-                          <div className="h-10 w-10 rounded-2xl bg-white/15 flex items-center justify-center group-hover:bg-white/25 group-hover:translate-x-1 transition-all">
-                            <ArrowRight className="h-4 w-4 text-white" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
 
         {/* ══ LEVEL 2 — Courses within selected category ══ */}
         {selectedCategory && !selectedCourse && (

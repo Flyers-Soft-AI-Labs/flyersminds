@@ -91,7 +91,22 @@ export default function DayDetailPage() {
     const data = getDayData(parseInt(dayNumber, 10));
     setDayData(data);
     fetchProgress();
-  }, [dayNumber, fetchProgress]);
+    // Fetch admin overrides and merge with static data
+    axios.get(`${API}/curriculum/${dayNumber}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((res) => {
+      if (res.data && Object.keys(res.data).length > 0) {
+        setDayData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            ...(res.data.topic ? { topic: res.data.topic } : {}),
+            ...(res.data.resource_links ? { resourceLinks: res.data.resource_links } : {}),
+          };
+        });
+      }
+    }).catch(() => {});
+  }, [dayNumber, fetchProgress, API, token]);
 
   useEffect(() => {
     const onMouseMove = (e) => {
