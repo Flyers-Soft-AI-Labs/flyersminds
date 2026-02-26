@@ -17,7 +17,6 @@ import {
   Code2,
   Trophy,
   Flame,
-  Sparkles,
   Gauge,
   Zap
 } from 'lucide-react';
@@ -47,7 +46,11 @@ export default function Dashboard() {
 
   const isDayCompleted = (dayNum) => {
     const p = getDayProgress(dayNum);
-    return p?.is_completed === true;
+    if (p?.is_completed === true) return true;
+    // Fallback: treat day as complete if all tasks are ticked even if complete-day API missed
+    const dayData = curriculum.find((d) => d.day === dayNum);
+    if (!dayData || !p?.completed_tasks) return false;
+    return p.completed_tasks.length >= dayData.tasks.length;
   };
 
   const isDayUnlocked = (dayNum) => {
@@ -93,18 +96,16 @@ export default function Dashboard() {
       <main className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
 
         {/* Welcome Section */}
-        <section className="relative mb-10 overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 p-8 backdrop-blur-md shadow-sm dark:shadow-none">
+        <section className="relative mb-10 overflow-hidden rounded-2xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 p-8 backdrop-blur-md shadow-md dark:shadow-none">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 dark:bg-cyan-500/20 blur-3xl" />
           <div className="absolute -left-10 -bottom-10 h-64 w-64 rounded-full bg-purple-500/10 dark:bg-purple-500/20 blur-3xl" />
 
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-100 dark:bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-400">
-                <Sparkles className="h-3.5 w-3.5" />
-                Intern Workspace
-              </div>
               <h1 className="font-heading text-4xl font-bold text-slate-900 dark:text-white sm:text-5xl">
-                Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}
+                Welcome back{user?.name ? (
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600">, {user.name.split(' ')[0]}</span>
+                ) : ''}
               </h1>
               <p className="mt-3 max-w-2xl text-base text-slate-600 dark:text-slate-400">
                 Stay on rhythm. Complete today&apos;s tasks and unlock your next milestone in the AI/ML journey.
@@ -203,7 +204,7 @@ export default function Dashboard() {
                 <TabsTrigger
                   key={month.id}
                   value={String(month.id)}
-                  className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 px-5 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 transition-all hover:bg-white/80 dark:hover:bg-white/10 data-[state=active]:border-cyan-500/50 data-[state=active]:bg-cyan-100 dark:data-[state=active]:bg-cyan-950/30 data-[state=active]:text-cyan-700 dark:data-[state=active]:text-cyan-400"
+                  className="relative overflow-hidden rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-400 transition-all hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-400 dark:hover:border-white/20 data-[state=active]:border-cyan-500/50 data-[state=active]:bg-cyan-100 dark:data-[state=active]:bg-cyan-950/30 data-[state=active]:text-cyan-700 dark:data-[state=active]:text-cyan-400"
                 >
                   <span className="relative z-10">Month {month.id}: {month.title}</span>
                   {activeMonth === String(month.id) && (
@@ -229,10 +230,10 @@ export default function Dashboard() {
                   const weekPercent = Math.round((weekDaysCompleted / week.days.length) * 100);
 
                   return (
-                    <div key={week.id} className="glass-panel overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-900/40">
-                      <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 px-6 py-4">
+                    <div key={week.id} className="glass-panel overflow-hidden rounded-2xl border border-slate-300 dark:border-white/5 bg-white dark:bg-slate-900/40">
+                      <div className="flex items-center justify-between border-b border-slate-300 dark:border-white/5 bg-slate-100 dark:bg-white/5 px-6 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-200 dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 border border-slate-300 dark:border-white/5">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-300 dark:bg-slate-800 text-cyan-700 dark:text-cyan-400 border border-slate-400 dark:border-white/5">
                             <Code2 className="h-5 w-5" />
                           </div>
                           <div>
@@ -275,8 +276,8 @@ export default function Dashboard() {
                               key={dayNum}
                               onClick={() => handleDayClick(dayNum, unlocked)}
                               className={`group flex w-full items-center gap-5 px-6 py-4 text-left transition-all ${unlocked
-                                ? 'hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer'
-                                : 'opacity-50 cursor-not-allowed hover:bg-transparent'
+                                ? 'hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer'
+                                : 'cursor-not-allowed hover:bg-slate-50 dark:hover:bg-transparent'
                                 }`}
                             >
                               <div className="shrink-0 relative">
@@ -289,7 +290,7 @@ export default function Dashboard() {
                                     <Circle className="h-6 w-6" />
                                   </div>
                                 ) : (
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-300 dark:bg-slate-800 text-slate-600 dark:text-slate-500">
                                     <Lock className="h-5 w-5" />
                                   </div>
                                 )}
@@ -297,12 +298,12 @@ export default function Dashboard() {
 
                               <div className="min-w-0 flex-1">
                                 <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                                  <span className={`text-xs font-bold uppercase tracking-wider ${unlocked ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-500 dark:text-slate-600'}`}>
+                                  <span className={`text-xs font-bold uppercase tracking-wider ${unlocked ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-600 dark:text-slate-500'}`}>
                                     Day {dayNum}
                                   </span>
 
                                   {!unlocked && (
-                                    <Badge variant="secondary" className="bg-slate-200 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700">
+                                    <Badge variant="secondary" className="bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-400 dark:border-slate-700">
                                       <Lock className="mr-1 h-3 w-3" />
                                       Locked
                                     </Badge>
@@ -316,20 +317,20 @@ export default function Dashboard() {
                                   )}
                                 </div>
 
-                                <p className={`truncate text-sm font-medium ${unlocked ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
+                                <p className={`truncate text-sm font-medium ${unlocked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
                                   {dayData.topic}
                                 </p>
 
                                 {unlocked && !completed && completionPct > 0 && (
                                   <div className="mt-2 flex items-center gap-3">
                                     <Progress value={completionPct} className="h-1.5 w-24 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-cyan-500" />
-                                    <span className="text-[10px] text-slate-400">{completionPct}%</span>
+                                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{completionPct}%</span>
                                   </div>
                                 )}
                               </div>
 
                               {unlocked && (
-                                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400 dark:text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400" />
+                                <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400" />
                               )}
                             </button>
                           );

@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../App';
+import { useTheme } from '../context/ThemeContext';
 import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Shield, Mail, Lock, Key, AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Shield, Mail, Lock, Key, AlertCircle, ArrowLeft, ShieldCheck, Sun, Moon } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
   const { login, API } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,6 +42,16 @@ export default function AdminLogin() {
 
   return (
     <div className="mesh-bg min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+
+      {/* Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="fixed top-4 right-4 z-50 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 shadow-md backdrop-blur-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+        aria-label="Toggle theme"
+      >
+        {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </button>
+
       <div className="mx-auto grid w-full max-w-4xl gap-6 md:grid-cols-[0.9fr_1.1fr]">
         <section className="surface-panel p-7 sm:p-8 animate-rise">
           <p className="kicker mb-4">Admin Route</p>
@@ -53,24 +65,24 @@ export default function AdminLogin() {
 
           <div className="mt-6 space-y-3">
             <div className="surface-panel-soft p-3.5">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#5f7278]">Security Layer</p>
-              <p className="mt-1 text-sm text-[#1f3238]">Email + password + verification code.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-300">Security Layer</p>
+              <p className="mt-1 text-sm text-slate-700 dark:text-slate-100">Email + password + verification code.</p>
             </div>
             <div className="surface-panel-soft p-3.5">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#5f7278]">Admin Limit</p>
-              <p className="mt-1 text-sm text-[#1f3238]">Maximum 3 administrator accounts.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-300">Admin Limit</p>
+              <p className="mt-1 text-sm text-slate-700 dark:text-slate-100">Maximum 3 administrator accounts.</p>
             </div>
           </div>
         </section>
 
         <section className="surface-panel p-6 sm:p-8 animate-rise-delay">
           <div className="mb-5 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-[#0f766e]" />
+            <Shield className="h-5 w-5 text-teal-600 dark:text-teal-400" />
             <h2 className="font-heading text-2xl font-semibold surface-title">Admin Sign In</h2>
           </div>
 
           {error && (
-            <div className="mb-5 flex items-start gap-2 rounded-xl border border-[#e9b4ac] bg-[#fff0ed] px-3.5 py-3 text-sm text-[#b74837]">
+            <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-3.5 py-3 text-sm text-red-600 dark:text-red-300">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -123,7 +135,7 @@ export default function AdminLogin() {
                 required
                 className="h-11"
               />
-              <p className="mt-2 text-xs text-[#607178]">Required for elevated access.</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Required for elevated access.</p>
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -131,10 +143,10 @@ export default function AdminLogin() {
             </Button>
           </form>
 
-          <div className="mt-6 border-t border-[#d7e2da] pt-4">
+          <div className="mt-6 border-t border-slate-200 dark:border-white/10 pt-4">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0f766e] hover:text-[#0d5e59]"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Login

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../App';
+import { useTheme } from '../context/ThemeContext';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/button';
@@ -13,14 +14,16 @@ import {
   Mail,
   Rocket,
   Shield,
-  Sparkles,
   User,
-  ArrowRight
+  ArrowRight,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function AuthPage() {
   const navigate = useNavigate();
   const { login, API } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('login');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -67,9 +70,16 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 selection:bg-cyan-500/30 selection:text-cyan-700 dark:selection:text-cyan-200 overflow-hidden">
 
-      {/* Dynamic background handled globally, ensuring transparency here */}
+      {/* Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="fixed top-4 right-4 z-50 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 shadow-md backdrop-blur-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+        aria-label="Toggle theme"
+      >
+        {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </button>
 
       <div className="relative z-10 w-full max-w-6xl grid gap-16 lg:grid-cols-[1fr_0.9fr] items-center">
 
@@ -81,19 +91,14 @@ export default function AuthPage() {
           className="space-y-8 hidden lg:block"
         >
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-950/30 px-4 py-1.5 text-sm font-semibold text-cyan-400 backdrop-blur-md mb-6 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-              <Sparkles className="h-4 w-4" />
-              <span>Next-Gen Learning</span>
-            </div>
-
-            <h1 className="font-heading text-6xl font-bold leading-tight text-white mb-6 tracking-tight drop-shadow-xl">
+            <h1 className="font-heading text-6xl font-bold leading-tight text-slate-900 dark:text-white mb-6 tracking-tight">
               Master AI Engineering <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 animate-gradient-x">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600">
                 in Weeks.
               </span>
             </h1>
 
-            <p className="max-w-xl text-xl text-slate-300 leading-relaxed drop-shadow-md">
+            <p className="max-w-xl text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
               Build production-ready AI systems with a structured, interactive curriculum.
               From Python basics to advanced LLM deployments, entirely browser-based.
             </p>
@@ -101,19 +106,19 @@ export default function AuthPage() {
 
           <div className="grid gap-5 sm:grid-cols-2">
             {[
-              { title: "Daily Guidance", icon: Rocket, color: "text-cyan-400", bg: "bg-cyan-500/10", desc: "Structured modules with hands-on coding tasks." },
-              { title: "Live Telemetry", icon: BarChart3, color: "text-purple-400", bg: "bg-purple-500/10", desc: "Real-time progress tracking & XP system." }
+              { title: "Daily Guidance", icon: Rocket, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-500/10", desc: "Structured modules with hands-on coding tasks." },
+              { title: "Live Telemetry", icon: BarChart3, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-500/10", desc: "Real-time progress tracking & XP system." }
             ].map((item, i) => (
               <motion.div
                 key={i}
-                whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)" }}
-                className="rounded-2xl border border-white/10 bg-slate-900/40 p-6 backdrop-blur-md transition-all duration-300"
+                whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.15)" }}
+                className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/40 p-6 backdrop-blur-md transition-all duration-300"
               >
                 <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${item.bg} ${item.color}`}>
                   <item.icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-400">{item.desc}</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -124,34 +129,34 @@ export default function AuthPage() {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          // Layout prop here allows the container itself to resize smoothly!
           layout
           className="relative"
         >
           {/* Glowing Border Effect */}
           <div className="absolute -inset-[2px] rounded-[32px] bg-gradient-to-b from-cyan-500/50 via-purple-500/30 to-transparent opacity-75 blur-md" />
 
-          <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl sm:p-12">
+          <div className="relative overflow-hidden rounded-[30px] border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl sm:p-12">
 
             <motion.div layout className="mb-8 text-center sm:text-left">
-              <h2 className="text-3xl font-bold text-white font-heading tracking-tight">Welcome Back</h2>
-              <p className="text-slate-400 mt-2">Sign in to continue your journey.</p>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white font-heading tracking-tight">Welcome Back</h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-2">Sign in to continue your journey.</p>
             </motion.div>
 
             {/* Custom Sliding Tabs */}
-            <div className="grid grid-cols-2 bg-slate-950/60 p-1.5 rounded-2xl border border-white/5 mb-8 relative">
+            <div className="grid grid-cols-2 bg-slate-100 dark:bg-slate-950/60 p-1.5 rounded-2xl border border-slate-200 dark:border-white/5 mb-8 relative">
               {['login', 'signup'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`relative z-10 px-4 py-2.5 text-sm font-semibold transition-colors duration-300 ${activeTab === tab ? 'text-white' : 'text-slate-400 hover:text-slate-200'
-                    }`}
+                  className={`relative z-10 px-4 py-2.5 text-sm font-semibold transition-colors duration-300 ${
+                    activeTab === tab ? 'text-slate-900' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
                 >
                   {tab === 'login' ? 'Login' : 'Sign Up'}
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 rounded-xl bg-slate-800 shadow-lg shadow-black/20"
+                      className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-400 shadow-lg shadow-cyan-900/30"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
@@ -165,7 +170,7 @@ export default function AuthPage() {
                   initial={{ opacity: 0, y: -10, height: 0 }}
                   animate={{ opacity: 1, y: 0, height: 'auto' }}
                   exit={{ opacity: 0, y: -10, height: 0 }}
-                  className="mb-6 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300"
+                  className="mb-6 flex items-center gap-3 rounded-xl border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-300"
                 >
                   <AlertCircle className="h-5 w-5 shrink-0" />
                   {error}
@@ -193,13 +198,13 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Email Address</Label>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-500 transition-colors group-focus-within:text-cyan-400" />
+                        <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400" />
                         <Input
                           type="email"
                           placeholder="name@company.com"
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-100 dark:bg-slate-800/80 border-slate-300 dark:border-cyan-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 dark:focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -208,16 +213,16 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between ml-1">
                         <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Password</Label>
-                        <Link to="#" className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors">Forgot Password?</Link>
+                        <Link to="/forgot-password" className="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors">Forgot Password?</Link>
                       </div>
                       <div className="relative group">
-                        <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-500 transition-colors group-focus-within:text-cyan-400" />
+                        <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400" />
                         <Input
                           type="password"
                           placeholder="••••••••"
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-100 dark:bg-slate-800/80 border-slate-300 dark:border-cyan-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 dark:focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -244,12 +249,12 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Full Name</Label>
                       <div className="relative group">
-                        <User className="absolute left-4 top-3.5 h-5 w-5 text-slate-500 transition-colors group-focus-within:text-cyan-400" />
+                        <User className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400" />
                         <Input
                           placeholder="John Doe"
                           value={signupName}
                           onChange={(e) => setSignupName(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-100 dark:bg-slate-800/80 border-slate-300 dark:border-cyan-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 dark:focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -258,13 +263,13 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Email Address</Label>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-500 transition-colors group-focus-within:text-cyan-400" />
+                        <Mail className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400" />
                         <Input
                           type="email"
                           placeholder="name@company.com"
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-100 dark:bg-slate-800/80 border-slate-300 dark:border-cyan-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 dark:focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -273,13 +278,13 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Password</Label>
                       <div className="relative group">
-                        <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-500 transition-colors group-focus-within:text-cyan-400" />
+                        <Lock className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 dark:text-slate-500 transition-colors group-focus-within:text-cyan-600 dark:group-focus-within:text-cyan-400" />
                         <Input
                           type="password"
                           placeholder="Create a strong password"
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
-                          className="pl-12 h-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
+                          className="pl-12 h-12 bg-slate-100 dark:bg-slate-800/80 border-slate-300 dark:border-cyan-500/30 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 dark:focus:border-cyan-500/50 focus:ring-cyan-500/20 rounded-xl transition-all"
                           required
                         />
                       </div>
@@ -289,7 +294,7 @@ export default function AuthPage() {
                       <button
                         type="button"
                         onClick={() => setShowAdminCode(!showAdminCode)}
-                        className="flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-cyan-300 transition-colors ml-1"
+                        className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 transition-colors ml-1"
                       >
                         <Shield className="h-3.5 w-3.5" />
                         {showAdminCode ? 'Hide Admin Code' : 'Have an invite code?'}
@@ -307,7 +312,7 @@ export default function AuthPage() {
                               placeholder="Enter admin code"
                               value={adminCode}
                               onChange={(e) => setAdminCode(e.target.value)}
-                              className="h-10 bg-purple-500/10 border-purple-500/30 text-purple-200 placeholder:text-purple-500/50 focus:border-purple-500/50 focus:ring-purple-500/20 rounded-lg text-sm"
+                              className="h-10 bg-purple-50 dark:bg-purple-500/10 border-purple-300 dark:border-purple-500/30 text-purple-700 dark:text-purple-200 placeholder:text-purple-400/70 dark:placeholder:text-purple-500/50 focus:border-purple-500/50 focus:ring-purple-500/20 rounded-lg text-sm"
                             />
                           </motion.div>
                         )}
@@ -327,7 +332,7 @@ export default function AuthPage() {
             </motion.div>
 
             <div className="mt-8 text-center">
-              <Link to="/admin-login" className="text-xs font-medium text-slate-500 hover:text-white transition-colors">
+              <Link to="/admin-login" className="text-xs font-medium text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                 Admin Access
               </Link>
             </div>
