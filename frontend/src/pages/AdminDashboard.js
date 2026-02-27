@@ -57,7 +57,7 @@ export default function AdminDashboard() {
   const internshipCategory = CATEGORIES.find((c) => c.id === 'internship');
   const aimlCourse = internshipCategory.courses.find((c) => c.id === 'aiml');
 
-  const [selectedCategory, setSelectedCategory] = useState(internshipCategory);
+  const [selectedCategory] = useState(internshipCategory);
   const [selectedCourse, setSelectedCourse] = useState(aimlCourse);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
