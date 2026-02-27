@@ -105,22 +105,12 @@ export default function AdminDashboard() {
   };
 
   // Level helpers
-  const handleCategorySelect = (cat) => setSelectedCategory(cat);
-
   const handleCourseSelect = (course) => {
     if (!course.active) return;
     setSelectedCourse(course);
     fetchUsers(course.id);
   };
 
-  const handleBackToCategories = () => {
-    setSelectedCategory(null);
-    setSelectedCourse(null);
-    setUsers([]);
-    setExpandedUser(null);
-    setSearchQuery('');
-    fetchCourseCounts();
-  };
 
   const handleBackToCourses = () => {
     setSelectedCourse(null);
