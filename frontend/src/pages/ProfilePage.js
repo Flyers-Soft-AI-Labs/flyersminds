@@ -182,11 +182,11 @@ export default function ProfilePage() {
   const generateSummary = () => {
     const doneMonths = [1, 2, 3, 4, 5, 6].filter((m) => monthProgress(m).pct >= 80);
     const skillStr   = doneMonths.map((m) => MONTH_SKILLS[m].title).join(', ');
-    if (completedDays === 0) return 'Aspiring AI/ML developer enrolled in FlyersSoft\'s intensive 120-day program. Eager to build expertise in Python, Machine Learning, and production AI systems.';
-    if (completedDays >= 100) return `Results-driven AI/ML engineer with hands-on expertise in ${skillStr}. Completed advanced coursework in deep learning, production AI deployment, and RAG architectures through FlyersSoft's rigorous internship program.`;
-    if (completedDays >= 60)  return `Motivated AI/ML developer proficient in ${skillStr}. Advancing through specialised training in deep learning and production AI at FlyersSoft.`;
-    if (completedDays >= 20)  return `Dedicated software developer with foundational expertise in ${skillStr || 'Python and backend development'}. Actively expanding skills in machine learning through structured training at FlyersSoft.`;
-    return 'Proactive developer building a strong Python foundation. Enrolled in FlyersSoft\'s comprehensive 120-day AI/ML internship.';
+    if (completedDays === 0) return 'Aspiring AI/ML developer enrolled in Flyers Minds\'s intensive 120-day program. Eager to build expertise in Python, Machine Learning, and production AI systems.';
+    if (completedDays >= 100) return `Results-driven AI/ML engineer with hands-on expertise in ${skillStr}. Completed advanced coursework in deep learning, production AI deployment, and RAG architectures through Flyers Minds's rigorous internship program.`;
+    if (completedDays >= 60)  return `Motivated AI/ML developer proficient in ${skillStr}. Advancing through specialised training in deep learning and production AI at Flyers Minds.`;
+    if (completedDays >= 20)  return `Dedicated software developer with foundational expertise in ${skillStr || 'Python and backend development'}. Actively expanding skills in machine learning through structured training at Flyers Minds.`;
+    return 'Proactive developer building a strong Python foundation. Enrolled in Flyers Minds\'s comprehensive 120-day AI/ML internship.';
   };
 
   const joinDate = profileUser?.created_at
@@ -221,16 +221,19 @@ export default function ProfilePage() {
         <main className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
 
           {/* Hero */}
-          <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f2027] via-[#203a43] to-[#2c5364] p-8 sm:p-10">
+          <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 via-slate-200 to-cyan-50 dark:from-[#0f2027] dark:via-[#203a43] dark:to-[#2c5364] border border-slate-200 dark:border-transparent p-8 sm:p-10">
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
               <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
             </div>
             <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
-              <div className="relative">
+              <div className="relative shrink-0">
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60 blur" />
-                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-bold text-white shadow-2xl">
-                  {user?.name?.charAt(0)?.toUpperCase()}
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-bold text-white shadow-2xl overflow-hidden">
+                  {profileUser?.avatar
+                    ? <img src={profileUser.avatar} alt="avatar" className="h-24 w-24 object-cover" />
+                    : <span>{user?.name?.charAt(0)?.toUpperCase()}</span>
+                  }
                 </div>
                 <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-sm shadow-lg">
                   <Shield className="h-4 w-4 text-yellow-900" />
@@ -238,13 +241,13 @@ export default function ProfilePage() {
               </div>
               <div className="flex-1">
                 <div className="mb-2 flex flex-wrap items-center gap-3">
-                  <h1 className="font-heading text-3xl font-bold text-white sm:text-4xl">{user?.name}</h1>
-                  <span className="rounded-full border border-yellow-500/40 bg-yellow-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-yellow-300">
+                  <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">{user?.name}</h1>
+                  <span className="rounded-full border border-yellow-500/40 bg-yellow-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-yellow-700 dark:text-yellow-300">
                     Administrator
                   </span>
                 </div>
-                <p className="mb-1 text-sm text-slate-300">{user?.email}</p>
-                <p className="text-xs text-slate-400">Platform Administrator · FlyersSoft Learning Studio</p>
+                <p className="mb-1 text-sm text-slate-600 dark:text-slate-300">{user?.email}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Platform Administrator · Flyers Minds</p>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
@@ -253,7 +256,7 @@ export default function ProfilePage() {
                   { label: 'Active Today',value: activeToday,  color: 'text-orange-400' },
                   { label: 'Top Performers',value: topPerformers, color: 'text-purple-400' },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center backdrop-blur-sm">
+                  <div key={s.label} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/5 px-4 py-3 text-center backdrop-blur-sm">
                     <p className={`font-heading text-xl font-bold ${s.color}`}>{s.value}</p>
                     <p className="text-[10px] uppercase tracking-wider text-slate-400">{s.label}</p>
                   </div>
@@ -447,8 +450,11 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative shrink-0">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60 blur" />
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-bold text-white shadow-2xl">
-                {profileUser?.name?.charAt(0)?.toUpperCase()}
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-4xl font-bold text-white shadow-2xl overflow-hidden">
+                {profileUser?.avatar
+                  ? <img src={profileUser.avatar} alt="avatar" className="h-24 w-24 object-cover" />
+                  : <span>{profileUser?.name?.charAt(0)?.toUpperCase()}</span>
+                }
               </div>
               {completedDays >= 120 && (
                 <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-sm shadow-lg">🏆</div>
@@ -469,7 +475,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <p className="mb-1 text-sm text-[#3a4a52] dark:text-slate-300">{profileUser?.email}</p>
-              <p className="text-xs text-[#5f7077] dark:text-slate-400">AI/ML Intern · FlyersSoft Learning Studio · Since {joinDate}</p>
+              <p className="text-xs text-[#5f7077] dark:text-slate-400">AI/ML Intern · Flyers Minds Flyers Minds · Since {joinDate}</p>
             </div>
 
             {/* Mini stats */}
@@ -523,7 +529,7 @@ export default function ProfilePage() {
                 {/* Name + contact */}
                 <div className="border-b border-[#dbe5de] pb-5 dark:border-white/10">
                   <h2 className="font-heading text-2xl font-bold text-[#1a2a31] dark:text-white">{profileUser?.name}</h2>
-                  <p className="mt-0.5 text-sm font-semibold text-[#0f766e]">AI / ML Developer · FlyersSoft Intern</p>
+                  <p className="mt-0.5 text-sm font-semibold text-[#0f766e]">AI / ML Developer · Flyers Minds Intern</p>
                   <div className="mt-3 flex flex-wrap gap-4 text-xs text-[#5f7077] dark:text-slate-400">
                     <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{profileUser?.email}</span>
                     <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />Joined {joinDate}</span>
@@ -568,7 +574,7 @@ export default function ProfilePage() {
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                       <div>
                         <h4 className="text-sm font-bold text-[#1a2a31] dark:text-white">AI / ML Engineering Intern</h4>
-                        <p className="text-xs font-semibold text-[#0f766e]">FlyersSoft Learning Program · Chennai, India</p>
+                        <p className="text-xs font-semibold text-[#0f766e]">Flyers Minds Learning Program · Chennai, India</p>
                       </div>
                       <span className="shrink-0 rounded-full bg-[#e8f6f2] px-2.5 py-1 text-[10px] font-semibold text-[#0f766e] dark:bg-[#0f766e]/20">
                         {joinDate} – Present
@@ -636,7 +642,7 @@ export default function ProfilePage() {
                 <div className="rounded-xl border border-[#dbe5de] bg-[#f6f9f7] p-4 dark:border-white/10 dark:bg-slate-800/50">
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#0f766e]">Program Details</p>
                   <p className="text-xs text-[#3a4a52] dark:text-slate-400">
-                    FlyersSoft AI / ML Internship · 120 days · 6 modules · Python → FastAPI → Machine Learning → Deep Learning → RAG & Production AI → Capstone Project
+                    Flyers Minds AI / ML Internship · 120 days · 6 modules · Python → FastAPI → Machine Learning → Deep Learning → RAG & Production AI → Capstone Project
                   </p>
                 </div>
               </div>

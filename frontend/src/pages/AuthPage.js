@@ -57,7 +57,7 @@ export default function AuthPage() {
     setIsLoading(true);
     setError('');
     try {
-      const payload = { name: signupName, email: signupEmail, password: signupPassword };
+      const payload = { name: signupName, email: signupEmail, password: signupPassword, course: 'aiml' };
       if (showAdminCode && adminCode) payload.admin_code = adminCode;
       const res = await axios.post(`${API}/auth/register`, payload);
       login(res.data.token, res.data.user);

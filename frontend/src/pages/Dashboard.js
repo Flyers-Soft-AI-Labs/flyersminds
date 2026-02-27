@@ -13,19 +13,144 @@ import {
   CheckCircle2,
   Circle,
   ChevronRight,
+  ChevronLeft,
   BookOpen,
   Code2,
   Trophy,
   Flame,
   Gauge,
-  Zap
+  Zap,
+  GraduationCap,
+  Briefcase,
+  Brain,
+  Database,
+  Cloud,
+  Layers,
+  ArrowRight,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
 } from 'lucide-react';
+
+const CATEGORIES = [
+  {
+    id: 'school',
+    label: '8th – 12th Standard',
+    sublabel: 'School Students · Age 13–18',
+    Icon: GraduationCap,
+    gradient: 'from-violet-600 via-purple-700 to-indigo-800',
+    courses: [
+      { id: 'coding-foundations', title: 'Coding & Technology Foundations', subtitle: 'For Classes 8–12', Icon: GraduationCap, gradient: 'from-violet-500 to-purple-600', active: false, badge: 'Coming Soon' },
+    ],
+  },
+  {
+    id: 'graduate',
+    label: 'Graduate Students',
+    sublabel: 'College & University',
+    Icon: BookOpen,
+    gradient: 'from-emerald-500 via-teal-600 to-green-700',
+    courses: [
+      { id: 'fullstack-bootcamp', title: 'Full Stack Dev Bootcamp', subtitle: 'For Graduate & Final-Year Students', Icon: Layers, gradient: 'from-emerald-500 to-teal-600', active: false, badge: 'Coming Soon' },
+    ],
+  },
+  {
+    id: 'internship',
+    label: 'Professional Internship',
+    sublabel: 'Industry Training Programs',
+    Icon: Briefcase,
+    gradient: 'from-cyan-500 via-blue-600 to-violet-700',
+    courses: [
+      { id: 'aiml',        title: 'AI / ML Engineering',  subtitle: '120-Day Intensive',            Icon: Brain,    gradient: 'from-cyan-500 to-blue-600',    active: true,  badge: 'Active' },
+      { id: 'webdev',      title: 'Full Stack Web Dev',    subtitle: 'React · Node.js · MongoDB',    Icon: Code2,    gradient: 'from-violet-500 to-purple-600', active: false, badge: 'Coming Soon' },
+      { id: 'datascience', title: 'Data Science',          subtitle: 'Python · SQL · Visualization', Icon: Database, gradient: 'from-emerald-500 to-teal-600', active: false, badge: 'Coming Soon' },
+      { id: 'cloud',       title: 'Cloud & DevOps',        subtitle: 'AWS · Docker · Kubernetes',    Icon: Cloud,    gradient: 'from-orange-500 to-red-500',   active: false, badge: 'Coming Soon' },
+    ],
+  },
+];
 
 export default function Dashboard() {
   const { token, API, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
   const [progress, setProgress] = useState([]);
   const [activeMonth, setActiveMonth] = useState('1');
+  // Admin course browser states
+  const [browsingCourses, setBrowsingCourses] = useState(false);
+  const [adminSelectedCategory, setAdminSelectedCategory] = useState(null);
+  const [adminSelectedCourse, setAdminSelectedCourse] = useState(null);
+  // Admin curriculum editing states
+  const [curriculumOverrides, setCurriculumOverrides] = useState({});
+  const [editingDay, setEditingDay] = useState(null);
+  const [editTopic, setEditTopic] = useState('');
+  const [editVideos, setEditVideos] = useState([]);
+  const [editSaving, setEditSaving] = useState(false);
+
+  const openCourseBrowser = () => {
+    setAdminSelectedCategory(null);
+    setAdminSelectedCourse(null);
+    setBrowsingCourses(true);
+  };
+
+  const closeCourseBrowser = () => {
+    setBrowsingCourses(false);
+    setAdminSelectedCategory(null);
+    setAdminSelectedCourse(null);
+  };
+
+  const fetchOverrides = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await axios.get(`${API}/admin/curriculum/overrides`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const map = {};
+      res.data.forEach((o) => { map[o.day_number] = o; });
+      setCurriculumOverrides(map);
+    } catch (err) {
+      console.error('Failed to fetch curriculum overrides', err);
+    }
+  }, [API, token, isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin && adminSelectedCourse) {
+      fetchOverrides();
+    }
+  }, [isAdmin, adminSelectedCourse, fetchOverrides]);
+
+  const handleEditDay = (dayNum) => {
+    const dayData = curriculum.find((d) => d.day === dayNum);
+    const override = curriculumOverrides[dayNum];
+    setEditingDay(dayNum);
+    setEditTopic(override?.topic ?? dayData?.topic ?? '');
+    setEditVideos(
+      override?.resource_links ??
+      dayData?.resourceLinks?.map((r) => ({ title: r.title, url: r.url })) ??
+      []
+    );
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDay) return;
+    setEditSaving(true);
+    try {
+      await axios.put(
+        `${API}/admin/curriculum/${editingDay}`,
+        { topic: editTopic, resource_links: editVideos },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCurriculumOverrides((prev) => ({
+        ...prev,
+        [editingDay]: { ...(prev[editingDay] || {}), topic: editTopic, resource_links: editVideos },
+      }));
+      toast.success('Day updated successfully!');
+      setEditingDay(null);
+    } catch (err) {
+      toast.error('Failed to save changes');
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   const fetchProgress = useCallback(async () => {
     try {
@@ -54,6 +179,7 @@ export default function Dashboard() {
   };
 
   const isDayUnlocked = (dayNum) => {
+    if (isAdmin) return true;
     if (dayNum === 1) return true;
     return isDayCompleted(dayNum - 1);
   };
@@ -91,7 +217,7 @@ export default function Dashboard() {
   const currentDay = currentStreak + 1 > 120 ? 120 : currentStreak + 1;
 
   return (
-    <div className="min-h-screen pb-12">
+    <div className="mesh-bg min-h-screen pb-12">
       <Navbar />
       <main className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
 
@@ -108,30 +234,50 @@ export default function Dashboard() {
                 ) : ''}
               </h1>
               <p className="mt-3 max-w-2xl text-base text-slate-600 dark:text-slate-400">
-                Stay on rhythm. Complete today&apos;s tasks and unlock your next milestone in the AI/ML journey.
+                {isAdmin
+                  ? 'You are viewing the full course as an admin. All 120 days are unlocked for preview.'
+                  : 'Stay on rhythm. Complete today\'s tasks and unlock your next milestone in the AI/ML journey.'}
               </p>
+              {isAdmin && (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  Admin Preview — All days unlocked
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/40 p-4 backdrop-blur-sm shadow-sm dark:shadow-none">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30">
-                <Gauge className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Current Focus</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-bold text-slate-900 dark:text-white">Day {currentDay}</span>
-                  <span className="text-sm text-slate-500">of 120</span>
-                </div>
-              </div>
-              <Button onClick={() => handleDayClick(currentDay, true)} className="ml-2 h-10 rounded-lg bg-slate-900 dark:bg-white/10 px-4 text-sm font-semibold text-white hover:bg-slate-800 dark:hover:bg-white/20">
-                Resumé
+            {isAdmin ? (
+              <Button
+                onClick={openCourseBrowser}
+                className="h-11 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-6 text-sm font-semibold text-white hover:from-cyan-500 hover:to-blue-500 shadow-md shadow-cyan-500/20"
+              >
+                Course Access
               </Button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/40 p-4 backdrop-blur-sm shadow-sm dark:shadow-none">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30">
+                  <Gauge className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Current Focus</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold text-slate-900 dark:text-white">Day {currentDay}</span>
+                    <span className="text-sm text-slate-500">of 120</span>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => handleDayClick(currentDay, true)}
+                  className="ml-2 h-10 rounded-lg bg-slate-900 dark:bg-white/10 px-4 text-sm font-semibold text-white hover:bg-slate-800 dark:hover:bg-white/20"
+                >
+                  Resumé
+                </Button>
+              </div>
+            )}
           </div>
         </section>
 
-        {/* Stats Grid */}
-        <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
+        {/* Stats Grid — interns only */}
+        {!isAdmin && <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="glass-card group relative overflow-hidden rounded-2xl p-6">
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 dark:from-cyan-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative z-10">
@@ -194,160 +340,451 @@ export default function Dashboard() {
               <div className="mt-4 text-xs text-purple-600 dark:text-purple-400 font-medium">Points Earned</div>
             </div>
           </div>
-        </div>
+        </div>}
 
-        {/* Curriculum Tabs */}
-        <Tabs value={activeMonth} onValueChange={setActiveMonth} className="w-full">
-          <div className="mb-8 overflow-x-auto pb-2">
-            <TabsList className="h-auto w-max gap-2 bg-transparent p-0">
-              {months.map((month) => (
-                <TabsTrigger
-                  key={month.id}
-                  value={String(month.id)}
-                  className="relative overflow-hidden rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-400 transition-all hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-400 dark:hover:border-white/20 data-[state=active]:border-cyan-500/50 data-[state=active]:bg-cyan-100 dark:data-[state=active]:bg-cyan-950/30 data-[state=active]:text-cyan-700 dark:data-[state=active]:text-cyan-400"
-                >
-                  <span className="relative z-10">Month {month.id}: {month.title}</span>
-                  {activeMonth === String(month.id) && (
-                    <span className="absolute inset-0 z-0 bg-gradient-to-r from-cyan-500/10 to-transparent" />
-                  )}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-
-          {months.map((month) => (
-            <TabsContent key={month.id} value={String(month.id)} className="mt-0 animate-in fade-in slide-in-from-bottom-5 duration-500">
-              <div className="mb-6">
-                <h2 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">
-                  Month {month.id}: {month.title}
-                </h2>
-                <p className="text-slate-600 dark:text-slate-400">{month.subtitle}</p>
+        {/* Admin: Course Browser (shown only when Course Access button clicked) */}
+        {isAdmin && browsingCourses && (
+          <>
+            {!adminSelectedCategory ? (
+              /* Level 1: Category tiles */
+              <div>
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">Course Access</h2>
+                    <p className="mt-1 text-slate-500 dark:text-slate-400">Select a category to explore course content.</p>
+                  </div>
+                  <button
+                    onClick={closeCourseBrowser}
+                    className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Back to Dashboard
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  {CATEGORIES.map((cat) => {
+                    const { Icon } = cat;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => setAdminSelectedCategory(cat.id)}
+                        className="group relative overflow-hidden rounded-2xl p-px text-left focus:outline-none"
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient} opacity-90 group-hover:opacity-100 transition-opacity rounded-2xl`} />
+                        <div className="relative z-10 rounded-[15px] bg-slate-950/60 backdrop-blur-sm p-7 h-full flex flex-col gap-4 border border-white/10">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-inner">
+                            <Icon className="h-7 w-7 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold text-white">{cat.label}</h3>
+                            <p className="mt-1 text-sm text-white/70">{cat.sublabel}</p>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm font-semibold text-white/80 group-hover:text-white transition-colors">
+                            Explore courses <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-
-              <div className="space-y-6">
-                {month.weeks.map((week) => {
-                  const weekDaysCompleted = week.days.filter(isDayCompleted).length;
-                  const weekPercent = Math.round((weekDaysCompleted / week.days.length) * 100);
-
-                  return (
-                    <div key={week.id} className="glass-panel overflow-hidden rounded-2xl border border-slate-300 dark:border-white/5 bg-white dark:bg-slate-900/40">
-                      <div className="flex items-center justify-between border-b border-slate-300 dark:border-white/5 bg-slate-100 dark:bg-white/5 px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-300 dark:bg-slate-800 text-cyan-700 dark:text-cyan-400 border border-slate-400 dark:border-white/5">
-                            <Code2 className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <h3 className="font-heading text-lg font-semibold text-slate-900 dark:text-white">
-                              Week {week.id}: {week.title}
-                            </h3>
-                            <p className="text-xs text-slate-500">
-                              {weekDaysCompleted}/{week.days.length} days completed
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                          <div className="hidden sm:block text-right">
-                            <div className="custom-progress w-32 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500" style={{ width: `${weekPercent}%` }} />
-                            </div>
-                          </div>
-                          <span className="min-w-[40px] text-right text-sm font-bold text-slate-900 dark:text-white">
-                            {weekPercent}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="divide-y divide-slate-200 dark:divide-white/5">
-                        {week.days.map((dayNum) => {
-                          const dayData = curriculum.find((d) => d.day === dayNum);
-                          if (!dayData) return null;
-                          const unlocked = isDayUnlocked(dayNum);
-                          const completed = isDayCompleted(dayNum);
-                          const completionPct = getDayCompletionPercent(dayNum);
-                          const lowerTopic = dayData.topic.toLowerCase();
-                          const isMiniProject =
-                            lowerTopic.includes('mini project') ||
-                            lowerTopic.includes('capstone') ||
-                            lowerTopic.includes('final project');
-
-                          return (
-                            <button
-                              key={dayNum}
-                              onClick={() => handleDayClick(dayNum, unlocked)}
-                              className={`group flex w-full items-center gap-5 px-6 py-4 text-left transition-all ${unlocked
-                                ? 'hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer'
-                                : 'cursor-not-allowed hover:bg-slate-50 dark:hover:bg-transparent'
-                                }`}
-                            >
-                              <div className="shrink-0 relative">
-                                {completed ? (
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
-                                    <CheckCircle2 className="h-6 w-6" />
-                                  </div>
-                                ) : unlocked ? (
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-shadow">
-                                    <Circle className="h-6 w-6" />
-                                  </div>
-                                ) : (
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-300 dark:bg-slate-800 text-slate-600 dark:text-slate-500">
-                                    <Lock className="h-5 w-5" />
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                                  <span className={`text-xs font-bold uppercase tracking-wider ${unlocked ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-600 dark:text-slate-500'}`}>
-                                    Day {dayNum}
-                                  </span>
-
-                                  {!unlocked && (
-                                    <Badge variant="secondary" className="bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-400 dark:border-slate-700">
-                                      <Lock className="mr-1 h-3 w-3" />
-                                      Locked
-                                    </Badge>
-                                  )}
-
-                                  {isMiniProject && (
-                                    <Badge className="bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 border-amber-500/30 hover:bg-amber-500/30">
-                                      <Trophy className="mr-1 h-3 w-3" />
-                                      Project
-                                    </Badge>
-                                  )}
-                                </div>
-
-                                <p className={`truncate text-sm font-medium ${unlocked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
-                                  {dayData.topic}
-                                </p>
-
-                                {unlocked && !completed && completionPct > 0 && (
-                                  <div className="mt-2 flex items-center gap-3">
-                                    <Progress value={completionPct} className="h-1.5 w-24 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-cyan-500" />
-                                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{completionPct}%</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {unlocked && (
-                                <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+            ) : !adminSelectedCourse ? (
+              /* Level 2: Course tiles within selected category */
+              (() => {
+                const cat = CATEGORIES.find((c) => c.id === adminSelectedCategory);
+                return (
+                  <div>
+                    <div className="mb-6 flex items-center gap-3">
+                      <button
+                        onClick={() => setAdminSelectedCategory(null)}
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                      >
+                        <ChevronLeft className="h-4 w-4" /> All Categories
+                      </button>
+                      <span className="text-slate-400">/</span>
+                      <span className="text-sm font-semibold text-slate-700 dark:text-white">{cat.label}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+                    <div className="mb-6">
+                      <h2 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">{cat.label}</h2>
+                      <p className="mt-1 text-slate-500 dark:text-slate-400">{cat.sublabel}</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {cat.courses.map((course) => {
+                        const { Icon: CourseIcon } = course;
+                        return (
+                          <button
+                            key={course.id}
+                            onClick={() => course.active && setAdminSelectedCourse(course.id)}
+                            disabled={!course.active}
+                            className={`group relative overflow-hidden rounded-2xl p-px text-left focus:outline-none ${!course.active ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                          >
+                            <div className={`absolute inset-0 bg-gradient-to-br ${course.gradient} ${course.active ? 'opacity-80 group-hover:opacity-100' : 'opacity-60'} transition-opacity rounded-2xl`} />
+                            <div className="relative z-10 rounded-[15px] bg-slate-950/60 backdrop-blur-sm p-6 h-full flex flex-col gap-3 border border-white/10">
+                              <div className="flex items-start justify-between">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 border border-white/20">
+                                  <CourseIcon className="h-6 w-6 text-white" />
+                                </div>
+                                <span className={`rounded-full px-3 py-1 text-xs font-bold ${course.active ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40' : 'bg-white/10 text-white/60 border border-white/10'}`}>
+                                  {course.badge}
+                                </span>
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="text-lg font-bold text-white">{course.title}</h3>
+                                <p className="mt-0.5 text-sm text-white/70">{course.subtitle}</p>
+                              </div>
+                              {course.active && (
+                                <div className="flex items-center gap-1.5 text-sm font-semibold text-white/80 group-hover:text-white transition-colors">
+                                  View curriculum <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              /* Level 3: Curriculum */
+              <>
+                <div className="mb-6 flex items-center gap-3">
+                  <button
+                    onClick={() => setAdminSelectedCourse(null)}
+                    className="flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Back to Courses
+                  </button>
+                  <span className="text-slate-400">/</span>
+                  <span className="text-sm text-slate-500 dark:text-slate-400">{CATEGORIES.find(c => c.id === adminSelectedCategory)?.label}</span>
+                  <span className="text-slate-400">/</span>
+                  <span className="text-sm font-semibold text-slate-700 dark:text-white">
+                    {CATEGORIES.flatMap(c => c.courses).find(c => c.id === adminSelectedCourse)?.title}
+                  </span>
+                </div>
+                <CurriculumTabs
+                  months={months}
+                  curriculum={curriculum}
+                  activeMonth={activeMonth}
+                  setActiveMonth={setActiveMonth}
+                  isDayUnlocked={isDayUnlocked}
+                  isDayCompleted={isDayCompleted}
+                  getDayCompletionPercent={getDayCompletionPercent}
+                  handleDayClick={handleDayClick}
+                  isAdmin={isAdmin}
+                  overrides={curriculumOverrides}
+                  onEditDay={handleEditDay}
+                />
+              </>
+            )}
+          </>
+        )}
+
+        {/* Intern curriculum (always visible) */}
+        {!isAdmin && (
+          <CurriculumTabs
+            months={months}
+            curriculum={curriculum}
+            activeMonth={activeMonth}
+            setActiveMonth={setActiveMonth}
+            isDayUnlocked={isDayUnlocked}
+            isDayCompleted={isDayCompleted}
+            getDayCompletionPercent={getDayCompletionPercent}
+            handleDayClick={handleDayClick}
+          />
+        )}
       </main>
+
+      {/* Admin Edit Day Modal */}
+      {editingDay && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => !editSaving && setEditingDay(null)}
+        >
+          <div
+            className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-6 py-4 bg-slate-50 dark:bg-slate-800/50">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Edit Day {editingDay}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Customize topic and learning resources</p>
+              </div>
+              <button
+                onClick={() => setEditingDay(null)}
+                disabled={editSaving}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 max-h-[65vh] overflow-y-auto">
+              {/* Topic */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-white mb-2">Topic</label>
+                <input
+                  value={editTopic}
+                  onChange={(e) => setEditTopic(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-shadow"
+                  placeholder="Day topic..."
+                />
+              </div>
+
+              {/* YouTube Resources */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-white">YouTube Resources</label>
+                  <button
+                    onClick={() => setEditVideos((v) => [...v, { title: '', url: '' }])}
+                    className="flex items-center gap-1 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/30 px-3 py-1.5 text-xs font-semibold text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add Video
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {editVideos.map((v, i) => (
+                    <div key={i} className="flex gap-2 items-start rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-800/50 p-3">
+                      <div className="flex-1 space-y-2">
+                        <input
+                          value={v.title}
+                          onChange={(e) => {
+                            const updated = [...editVideos];
+                            updated[i] = { ...updated[i], title: e.target.value };
+                            setEditVideos(updated);
+                          }}
+                          placeholder="Video title..."
+                          className="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        />
+                        <input
+                          value={v.url}
+                          onChange={(e) => {
+                            const updated = [...editVideos];
+                            updated[i] = { ...updated[i], url: e.target.value };
+                            setEditVideos(updated);
+                          }}
+                          placeholder="YouTube URL (e.g. https://youtu.be/...)"
+                          className="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setEditVideos((vids) => vids.filter((_, idx) => idx !== i))}
+                        className="mt-1 rounded-lg p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 transition-colors"
+                        title="Remove video"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {editVideos.length === 0 && (
+                    <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4 rounded-xl border border-dashed border-slate-300 dark:border-white/10">
+                      No videos added yet. Click "Add Video" to add one.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-white/10 px-6 py-4 bg-slate-50 dark:bg-slate-800/50">
+              <button
+                onClick={() => setEditingDay(null)}
+                disabled={editSaving}
+                className="rounded-xl border border-slate-300 dark:border-white/10 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editSaving}
+                className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2 text-sm font-semibold text-white hover:from-cyan-500 hover:to-blue-500 disabled:opacity-60 transition-all shadow-md shadow-cyan-500/20"
+              >
+                {editSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function Button({ className, ...props }) {
   return <button className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 ${className}`} {...props} />
+}
+
+function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDayUnlocked, isDayCompleted, getDayCompletionPercent, handleDayClick, isAdmin = false, overrides = {}, onEditDay }) {
+  return (
+    <Tabs value={activeMonth} onValueChange={setActiveMonth} className="w-full">
+      <div className="mb-8 overflow-x-auto pb-2">
+        <TabsList className="h-auto w-max gap-2 bg-transparent p-0">
+          {months.map((month) => (
+            <TabsTrigger
+              key={month.id}
+              value={String(month.id)}
+              className="relative overflow-hidden rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-400 transition-all hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-400 dark:hover:border-white/20 data-[state=active]:border-cyan-500/50 data-[state=active]:bg-cyan-100 dark:data-[state=active]:bg-cyan-950/30 data-[state=active]:text-cyan-700 dark:data-[state=active]:text-cyan-400"
+            >
+              <span className="relative z-10">Month {month.id}: {month.title}</span>
+              {activeMonth === String(month.id) && (
+                <span className="absolute inset-0 z-0 bg-gradient-to-r from-cyan-500/10 to-transparent" />
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+
+      {months.map((month) => (
+        <TabsContent key={month.id} value={String(month.id)} className="mt-0 animate-in fade-in slide-in-from-bottom-5 duration-500">
+          <div className="mb-6">
+            <h2 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">
+              Month {month.id}: {month.title}
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400">{month.subtitle}</p>
+          </div>
+
+          <div className="space-y-6">
+            {month.weeks.map((week) => {
+              const weekDaysCompleted = week.days.filter(isDayCompleted).length;
+              const weekPercent = Math.round((weekDaysCompleted / week.days.length) * 100);
+
+              return (
+                <div key={week.id} className="glass-panel overflow-hidden rounded-2xl border border-slate-300 dark:border-white/5 bg-white dark:bg-slate-900/40">
+                  <div className="flex items-center justify-between border-b border-slate-300 dark:border-white/5 bg-slate-100 dark:bg-white/5 px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-300 dark:bg-slate-800 text-cyan-700 dark:text-cyan-400 border border-slate-400 dark:border-white/5">
+                        <Code2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-heading text-lg font-semibold text-slate-900 dark:text-white">
+                          Week {week.id}: {week.title}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {weekDaysCompleted}/{week.days.length} days completed
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="hidden sm:block text-right">
+                        <div className="custom-progress w-32 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500" style={{ width: `${weekPercent}%` }} />
+                        </div>
+                      </div>
+                      <span className="min-w-[40px] text-right text-sm font-bold text-slate-900 dark:text-white">
+                        {weekPercent}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-slate-200 dark:divide-white/5">
+                    {week.days.map((dayNum) => {
+                      const dayData = curriculum.find((d) => d.day === dayNum);
+                      if (!dayData) return null;
+                      const unlocked = isDayUnlocked(dayNum);
+                      const completed = isDayCompleted(dayNum);
+                      const completionPct = getDayCompletionPercent(dayNum);
+                      const override = overrides[dayNum];
+                      const displayTopic = override?.topic ?? dayData.topic;
+                      const lowerTopic = displayTopic.toLowerCase();
+                      const isMiniProject =
+                        lowerTopic.includes('mini project') ||
+                        lowerTopic.includes('capstone') ||
+                        lowerTopic.includes('final project');
+
+                      return (
+                        <div
+                          key={dayNum}
+                          className={`group flex w-full items-center transition-all ${unlocked
+                            ? 'hover:bg-slate-100 dark:hover:bg-white/5'
+                            : 'hover:bg-slate-50 dark:hover:bg-transparent'
+                            }`}
+                        >
+                          <button
+                            onClick={() => handleDayClick(dayNum, unlocked)}
+                            className={`flex flex-1 items-center gap-5 px-6 py-4 text-left ${unlocked ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                          >
+                            <div className="shrink-0 relative">
+                              {completed ? (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
+                                  <CheckCircle2 className="h-6 w-6" />
+                                </div>
+                              ) : unlocked ? (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-shadow">
+                                  <Circle className="h-6 w-6" />
+                                </div>
+                              ) : (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-300 dark:bg-slate-800 text-slate-600 dark:text-slate-500">
+                                  <Lock className="h-5 w-5" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                                <span className={`text-xs font-bold uppercase tracking-wider ${unlocked ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-600 dark:text-slate-500'}`}>
+                                  Day {dayNum}
+                                </span>
+
+                                {!unlocked && (
+                                  <Badge variant="secondary" className="bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-400 dark:border-slate-700">
+                                    <Lock className="mr-1 h-3 w-3" />
+                                    Locked
+                                  </Badge>
+                                )}
+
+                                {isMiniProject && (
+                                  <Badge className="bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 border-amber-500/30 hover:bg-amber-500/30">
+                                    <Trophy className="mr-1 h-3 w-3" />
+                                    Project
+                                  </Badge>
+                                )}
+
+                                {isAdmin && override?.topic && (
+                                  <Badge className="bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 border-violet-300 dark:border-violet-500/30">
+                                    <Pencil className="mr-1 h-3 w-3" />
+                                    Edited
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <p className={`truncate text-sm font-medium ${unlocked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                                {displayTopic}
+                              </p>
+
+                              {unlocked && !completed && completionPct > 0 && (
+                                <div className="mt-2 flex items-center gap-3">
+                                  <Progress value={completionPct} className="h-1.5 w-24 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-cyan-500" />
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">{completionPct}%</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {unlocked && (
+                              <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400" />
+                            )}
+                          </button>
+
+                          {isAdmin && onEditDay && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onEditDay(dayNum); }}
+                              className="mr-4 flex-shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all opacity-0 group-hover:opacity-100"
+                              title={`Edit Day ${dayNum}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </TabsContent>
+      ))}
+    </Tabs>
+  );
 }
