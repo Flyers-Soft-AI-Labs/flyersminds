@@ -60,25 +60,42 @@ export const month3 = [
     week: 9,
     monthTitle: "Machine Learning",
     weekTitle: "Data Science & Python for ML",
-    topic: "Data Cleaning",
-    handsOn: ["Identify null values using isnull()", "Use dropna() to remove rows", "Use fillna() to fill missing values", "Handle duplicates"],
-    example: "Handling Missing Values",
-    codingTask: "Clean a dataset with missing values using pandas.",
-    assignment: "Apply both dropna() and fillna() methods and compare the results.",
-    explanation: "Real-world data is always messy with missing values, duplicates, and errors. Cleaning makes it usable for ML models.",
-    expectedInputs: "Dataset with missing values",
-    expectedOutputs: "Clean dataset with no missing values",
-    evaluationChecklist: ["Missing values identified", "Cleaning methods applied correctly", "No wrong data removal", "Dataset usable for modeling"],
-    gitTask: "Commit data cleaning script",
+    topic: "Data Cleaning & Categorical Encoding",
+    handsOn: [
+      "Identify null values using isnull()",
+      "Use dropna() to remove rows with missing values",
+      "Use fillna() to fill missing values",
+      "Apply LabelEncoder on ordinal categorical columns",
+      "Apply pd.get_dummies() for One-Hot Encoding on nominal columns",
+      "Understand when to use Label Encoding vs One-Hot Encoding"
+    ],
+    example: "Handling Missing Values + Encoding Gender, City, Product Type columns",
+    codingTask: "Part 1: Clean a dataset with missing values. Part 2: Take a dataset with categorical columns (e.g., Gender: Male/Female, City: Chennai/Mumbai). Apply (1) Label Encoding on ordinal data, (2) One-Hot Encoding on nominal data. Verify no string columns remain.",
+    assignment: "Part 1: Apply both dropna() and fillna() and compare results. Part 2: Load the Titanic or any dataset with categorical columns. Encode all non-numeric columns and explain your choice of encoding method for each column.",
+    explanation: "Real-world data is messy — cleaning makes it usable for ML models. ML models cannot process text/categorical data directly — encoding converts them to numbers. One-Hot Encoding vs Label Encoding is a frequent interview question and a daily practical skill.",
+    expectedInputs: "Dataset with null values and categorical (text) columns",
+    expectedOutputs: "Cleaned dataset + Fully numeric dataset ready for ML model training",
+    evaluationChecklist: [
+      "Missing values handled",
+      "No wrong data removal",
+      "Dataset usable",
+      "LabelEncoder applied correctly",
+      "pd.get_dummies() used",
+      "No string columns in final dataset",
+      "Explained why each encoding was chosen"
+    ],
+    gitTask: "Commit cleaned dataset script and encoding implementation together",
     resourceLinks: [
-      { title: "Data Cleaning", url: "https://youtu.be/WpX2F2BS3Qc?si=I0dLtz7kGoR6qkX_" }
+      { title: "Data Cleaning", url: "https://youtu.be/WpX2F2BS3Qc?si=I0dLtz7kGoR6qkX_" },
+      { title: "Categorical Encoding", url: "https://youtu.be/9yl6-HEY7_s?si=Q1oWK6JU-ETHrkrl" }
     ],
     tasks: [
-      { id: "d43_resources", label: "Review learning resources" },
-      { id: "d43_handson", label: "Complete hands-on: Null value handling" },
-      { id: "d43_coding", label: "Coding task: Clean dataset with missing values" },
-      { id: "d43_assignment", label: "Assignment: Compare dropna vs fillna methods" },
-      { id: "d43_git", label: "Git: Commit cleaning script" }
+      { id: "d43_resources", label: "Review learning resources (both topics)" },
+      { id: "d43_handson_cleaning", label: "Hands-on: Identify nulls, use dropna() and fillna()" },
+      { id: "d43_handson_encoding", label: "Hands-on: LabelEncoder & pd.get_dummies()" },
+      { id: "d43_coding", label: "Coding task: Clean dataset + encode categorical columns" },
+      { id: "d43_assignment", label: "Assignment: Compare dropna vs fillna + explain encoding choices" },
+      { id: "d43_git", label: "Git: Commit cleaning and encoding scripts together" }
     ]
   },
   {
@@ -166,25 +183,44 @@ export const month3 = [
     week: 10,
     monthTitle: "Machine Learning",
     weekTitle: "ML Basics (Regression & Classification)",
-    topic: "Model Evaluation (Regression Metrics)",
-    handsOn: ["Calculate Mean Squared Error (MSE)", "Calculate Root Mean Squared Error (RMSE)", "Calculate R-squared Score"],
-    example: "Evaluating house price prediction model",
-    codingTask: "Evaluate your Linear Regression model using MSE, RMSE, and R-squared.",
-    assignment: "Print all three metrics and interpret what each means.",
-    explanation: "Learn to judge how good a model is by using proper evaluation metrics.",
-    expectedInputs: "True values and predicted values",
-    expectedOutputs: "MSE, RMSE, R-squared scores",
-    evaluationChecklist: ["All metrics calculated correctly", "Correct interpretation provided", "No formula errors"],
-    gitTask: "Commit evaluation metrics code",
+    topic: "Model Evaluation (Regression Metrics) & K-Fold Cross Validation",
+    handsOn: [
+      "Calculate Mean Squared Error (MSE)",
+      "Calculate Root Mean Squared Error (RMSE)",
+      "Calculate R² Score",
+      "Understand why a single train-test split can be unreliable",
+      "Use cross_val_score from sklearn.model_selection",
+      "Compare single split result vs K-Fold CV mean score",
+      "Understand the role of k (typically k=5 or k=10)"
+    ],
+    example: "Evaluating house price model with MSE, R² and 5-Fold Cross Validation",
+    codingTask: "Part 1: Evaluate your Linear Regression model using MSE and R². Part 2: Apply 5-Fold Cross Validation on your Linear Regression model. Compare: (1) Single train-test split R² score, (2) Mean R² from 5-Fold CV, (3) Std deviation of CV scores to check consistency.",
+    assignment: "Part 1: Print and interpret each metric (MSE, RMSE, R²). Part 2: Apply K-Fold CV with k=5 and k=10 on your regression model. Write an interpretation of which k gave more reliable results and why.",
+    explanation: "Evaluation metrics tell you how good a model is instead of blindly trusting predictions. Train-test split depends heavily on which data ends up in the test set — K-Fold CV gives a more reliable, unbiased estimate of model performance by training and testing on multiple folds. It is standard practice in all real ML projects.",
+    expectedInputs: "Actual values, predicted values, trained model, feature matrix X, target y",
+    expectedOutputs: "MSE, RMSE, R² values + array of CV scores, mean score, standard deviation",
+    evaluationChecklist: [
+      "Metrics calculated correctly",
+      "Correct interpretation provided",
+      "No formula errors",
+      "cross_val_score used correctly",
+      "k=5 and k=10 both tried",
+      "Mean and std deviation reported",
+      "Results compared with single split",
+      "Interpretation written"
+    ],
+    gitTask: "Commit evaluation metrics code and K-Fold CV implementation together",
     resourceLinks: [
-      { title: "Evaluation Metrics", url: "https://youtu.be/LbX4X71-TFI?si=h2nvb1sMCYa1ZBfp" }
+      { title: "Regression Metrics", url: "https://youtu.be/LbX4X71-TFI?si=h2nvb1sMCYa1ZBfp" },
+      { title: "K-Fold Cross Validation", url: "https://youtu.be/gJo0uNL-5Qw?si=UFXfi8ZezkvB001i" }
     ],
     tasks: [
-      { id: "d47_resources", label: "Review learning resources" },
-      { id: "d47_handson", label: "Complete hands-on: MSE, RMSE, R-squared" },
-      { id: "d47_coding", label: "Coding task: Evaluate regression model" },
-      { id: "d47_assignment", label: "Assignment: Interpret all metrics" },
-      { id: "d47_git", label: "Git: Commit evaluation code" }
+      { id: "d47_resources", label: "Review learning resources (both topics)" },
+      { id: "d47_handson_metrics", label: "Hands-on: Calculate MSE, RMSE, R²" },
+      { id: "d47_handson_kfold", label: "Hands-on: Apply cross_val_score with k=5 and k=10" },
+      { id: "d47_coding", label: "Coding task: Evaluate model + K-Fold CV comparison" },
+      { id: "d47_assignment", label: "Assignment: Interpret metrics + compare k=5 vs k=10" },
+      { id: "d47_git", label: "Git: Commit evaluation metrics and K-Fold CV code" }
     ]
   },
   {
@@ -193,25 +229,43 @@ export const month3 = [
     week: 10,
     monthTitle: "Machine Learning",
     weekTitle: "ML Basics (Regression & Classification)",
-    topic: "Logistic Regression (Classification)",
-    handsOn: ["Understand classification problems", "Load classification dataset", "Train Logistic Regression model", "Make predictions"],
-    example: "Customer Churn Prediction",
-    codingTask: "Build a Logistic Regression model to predict whether a customer will churn (leave).",
-    assignment: "Try another classification dataset like Spam detection or Loan approval prediction.",
-    explanation: "Introduces classification where the output is categorical (Yes/No, 0/1) instead of continuous numbers.",
-    expectedInputs: "Customer features (age, usage, complaints)",
-    expectedOutputs: "Churn predictions (0 or 1)",
-    evaluationChecklist: ["Model trains successfully", "Predictions are 0 or 1", "Correct target variable mapping"],
-    gitTask: "Commit classification model notebook",
+    topic: "Logistic Regression & Decision Tree Classifier",
+    handsOn: [
+      "Understand classification problems",
+      "Load dataset and train Logistic Regression model",
+      "Understand how Decision Trees split data using Gini impurity or Entropy",
+      "Train DecisionTreeClassifier on the same churn dataset",
+      "Visualize the tree using plot_tree from sklearn.tree",
+      "Understand max_depth hyperparameter and how it controls overfitting"
+    ],
+    example: "Customer Churn Prediction with Logistic Regression and Decision Tree",
+    codingTask: "Part 1: Build a Logistic Regression model to predict whether a customer will churn. Part 2: Build a Decision Tree classifier on the same churn dataset. Visualize the decision tree (limit depth to 3 for readability). Compare accuracy of both models side by side.",
+    assignment: "Part 1: Try another dataset (Spam detection / Loan approval). Part 2: Try max_depth = 3, 5, 10 and observe how it affects train vs test accuracy. Write observations about overfitting when max_depth is too high.",
+    explanation: "Logistic Regression introduces classification where output is categorical (Yes/No, 0/1). Decision Trees are non-linear and more flexible — they are the foundation of Random Forest and XGBoost. Visualizing a tree builds deep intuition about how ML models make decisions.",
+    expectedInputs: "Dataset with features and binary target",
+    expectedOutputs: "Predicted class labels, trained Decision Tree model, tree visualization, accuracy comparison",
+    evaluationChecklist: [
+      "Logistic Regression model trains",
+      "Predictions generated",
+      "Correct target mapping",
+      "Decision Tree trained",
+      "Tree visualized",
+      "max_depth experimented",
+      "Logistic Regression vs Decision Tree compared",
+      "Overfitting observation noted"
+    ],
+    gitTask: "Commit Logistic Regression and Decision Tree models together",
     resourceLinks: [
-      { title: "Logistic Regression", url: "https://youtu.be/UCOm-LFKX9E?si=l1bWCbCRiMmMyB-8" }
+      { title: "Logistic Regression", url: "https://youtu.be/UCOm-LFKX9E?si=l1bWCbCRiMmMyB-8" },
+      { title: "Decision Tree Classifier", url: "https://youtu.be/_L39rN6gz7Y?si=UKuPak6_pLqCau1k" }
     ],
     tasks: [
-      { id: "d48_resources", label: "Review learning resources" },
-      { id: "d48_handson", label: "Complete hands-on: Logistic regression training" },
-      { id: "d48_coding", label: "Coding task: Customer churn prediction" },
-      { id: "d48_assignment", label: "Assignment: Try spam/loan dataset" },
-      { id: "d48_git", label: "Git: Commit classification model" }
+      { id: "d48_resources", label: "Review learning resources (both topics)" },
+      { id: "d48_handson_lr", label: "Hands-on: Train Logistic Regression on churn dataset" },
+      { id: "d48_handson_dt", label: "Hands-on: Train Decision Tree and visualize with plot_tree" },
+      { id: "d48_coding", label: "Coding task: Build both models, compare accuracy" },
+      { id: "d48_assignment", label: "Assignment: Try new dataset + experiment with max_depth" },
+      { id: "d48_git", label: "Git: Commit Logistic Regression and Decision Tree models" }
     ]
   },
   {
@@ -220,25 +274,44 @@ export const month3 = [
     week: 10,
     monthTitle: "Machine Learning",
     weekTitle: "ML Basics (Regression & Classification)",
-    topic: "Classification Metrics",
-    handsOn: ["Create Confusion Matrix", "Calculate Accuracy, Precision, Recall", "Calculate F1-score"],
-    example: "Evaluating churn prediction model",
-    codingTask: "Evaluate your classification model using all metrics: Accuracy, Precision, Recall, F1-score.",
-    assignment: "Plot and interpret the confusion matrix.",
-    explanation: "Accuracy alone is not enough to evaluate classifiers, especially for imbalanced datasets. Need precision, recall, F1-score.",
-    expectedInputs: "True labels and predicted labels",
-    expectedOutputs: "All metrics calculated and confusion matrix plotted",
-    evaluationChecklist: ["All metrics calculated correctly", "Confusion matrix plotted properly", "Interpretation of metrics provided"],
-    gitTask: "Commit evaluation code and plots",
+    topic: "Classification Metrics & Random Forest Classifier",
+    handsOn: [
+      "Create Confusion Matrix",
+      "Calculate Accuracy, Precision, Recall, F1-score",
+      "Understand ensemble learning and the concept of bagging",
+      "Train RandomForestClassifier on the churn dataset",
+      "Use n_estimators hyperparameter to control number of trees",
+      "Extract and visualize feature importances",
+      "Compare Random Forest vs single Decision Tree performance"
+    ],
+    example: "Evaluating churn model + Random Forest for Customer Churn Prediction",
+    codingTask: "Part 1: Evaluate your classification model using all metrics: Accuracy, Precision, Recall, F1-score. Part 2: Train a Random Forest on the churn dataset. Print the top 5 most important features. Compare Random Forest accuracy vs single Decision Tree from Day 48.",
+    assignment: "Part 1: Plot and interpret the confusion matrix. Part 2: Tune n_estimators (50, 100, 200) in a loop and plot accuracy vs n_estimators to see where performance stabilizes.",
+    explanation: "Accuracy alone is not enough for imbalanced datasets — you need precision, recall, and F1-score. Random Forest is one of the most used ML algorithms in industry. It builds many Decision Trees and combines their predictions (ensemble). It is more powerful, more robust to overfitting, and automatically provides feature importance scores.",
+    expectedInputs: "True labels, predicted labels, dataset with features and binary target",
+    expectedOutputs: "Metric values, confusion matrix, trained Random Forest model, feature importance chart, comparison with Decision Tree",
+    evaluationChecklist: [
+      "All metrics calculated correctly",
+      "Confusion matrix plotted properly",
+      "Interpretation provided",
+      "RandomForestClassifier trained",
+      "Feature importances extracted and visualized",
+      "n_estimators tuned",
+      "Random Forest vs Decision Tree compared",
+      "Best model identified"
+    ],
+    gitTask: "Commit evaluation code, plots, and Random Forest model together",
     resourceLinks: [
-      { title: "Classification Metrics", url: "https://youtu.be/aWAnNHXIKww?si=WjklcT78nWlakZuy" }
+      { title: "Classification Metrics", url: "https://youtu.be/aWAnNHXIKww?si=WjklcT78nWlakZuy" },
+      { title: "Random Forest Classifier", url: "https://youtu.be/gkXX4h3qYm4?si=YQmWd8K6ttrCQC5h" }
     ],
     tasks: [
-      { id: "d49_resources", label: "Review learning resources" },
-      { id: "d49_handson", label: "Complete hands-on: All classification metrics" },
-      { id: "d49_coding", label: "Coding task: Full model evaluation" },
-      { id: "d49_assignment", label: "Assignment: Plot and interpret confusion matrix" },
-      { id: "d49_git", label: "Git: Commit evaluation code" }
+      { id: "d49_resources", label: "Review learning resources (both topics)" },
+      { id: "d49_handson_metrics", label: "Hands-on: Confusion matrix, accuracy, precision, recall, F1" },
+      { id: "d49_handson_rf", label: "Hands-on: Train Random Forest, extract feature importances" },
+      { id: "d49_coding", label: "Coding task: Full evaluation + Random Forest training" },
+      { id: "d49_assignment", label: "Assignment: Plot confusion matrix + tune n_estimators" },
+      { id: "d49_git", label: "Git: Commit evaluation code and Random Forest model" }
     ]
   },
   {
@@ -298,25 +371,45 @@ export const month3 = [
     week: 11,
     monthTitle: "Machine Learning",
     weekTitle: "Feature Engineering & Optimization",
-    topic: "Feature Scaling",
-    handsOn: ["Understand why scaling is needed", "Apply StandardScaler", "Apply MinMaxScaler", "Compare results"],
-    example: "Scaling numerical features",
-    codingTask: "Apply StandardScaler and MinMaxScaler on numerical features in your dataset.",
-    assignment: "Train models before and after scaling and compare performance.",
-    explanation: "Scaling ensures all features contribute equally to the model. Features with large values don't dominate.",
-    expectedInputs: "Raw numerical features",
-    expectedOutputs: "Scaled features in proper range",
-    evaluationChecklist: ["Scaling applied correctly", "No data leakage (fit on train only)", "Correct scaler used for problem"],
-    gitTask: "Commit feature scaling implementation",
+    topic: "Feature Scaling, KNN & Support Vector Machine (SVM)",
+    handsOn: [
+      "Understand why scaling is needed and apply StandardScaler and MinMaxScaler",
+      "Understand how KNN classifies by looking at k nearest neighbors",
+      "Train KNeighborsClassifier and experiment with different k values",
+      "Observe how KNN performance drops without scaling (run without scaler first)",
+      "Understand how SVM finds the optimal hyperplane with maximum margin",
+      "Train SVC and compare linear vs rbf kernel"
+    ],
+    example: "Feature Scaling + KNN and SVM for Customer Churn Classification",
+    codingTask: "Part 1: Apply StandardScaler on one dataset and MinMaxScaler on another. Part 2 (KNN): Train KNeighborsClassifier with k=5 on the churn dataset. Try k=1, 5, 10, 20 and plot accuracy vs k. Observe and document how performance changes with and without StandardScaler. Part 3 (SVM): Train an SVC(kernel='rbf') on the same scaled dataset. Compare SVM vs KNN vs Logistic Regression vs Decision Tree vs Random Forest accuracy in a summary table.",
+    assignment: "Part 1: Compare model performance before and after scaling. Part 2: Build a model comparison table with all 5 classifiers (Logistic Regression, Decision Tree, Random Forest, KNN, SVM). Record accuracy, precision, recall, F1-score and training time for each. Write a conclusion on which model to use and when.",
+    explanation: "Scaling ensures all features contribute equally — especially critical for distance-based algorithms like KNN and SVM. KNN directly demonstrates WHY scaling matters. This day gives interns a complete picture of the most important classification algorithms before the project week.",
+    expectedInputs: "Dataset with numerical features and binary target",
+    expectedOutputs: "Scaled dataset, KNN accuracy vs k plot, SVM model, 5-model comparison table",
+    evaluationChecklist: [
+      "Scaling applied correctly",
+      "No data leakage (fit on train only)",
+      "Correct scaler used",
+      "Scaling applied before KNN and SVM",
+      "KNN k-value optimized",
+      "SVM trained",
+      "All 5 models compared",
+      "Best model identified with justification"
+    ],
+    gitTask: "Commit KNN and SVM models alongside scaling implementation",
     resourceLinks: [
-      { title: "Feature Scaling", url: "https://youtu.be/Q-45O3b1pO8?si=AFbl_m8RmIsNZlDO" }
+      { title: "Feature Scaling", url: "https://youtu.be/Q-45O3b1pO8?si=AFbl_m8RmIsNZlDO" },
+      { title: "K-Nearest Neighbors (KNN)", url: "https://youtu.be/CQveSaMyEwM?si=fwwZ6BgffEUl3SCo" },
+      { title: "Support Vector Machine (SVM)", url: "https://youtu.be/FB5EdxAGxQg?si=zi71MnLYH5odkmRg" }
     ],
     tasks: [
-      { id: "d52_resources", label: "Review learning resources" },
-      { id: "d52_handson", label: "Complete hands-on: StandardScaler & MinMaxScaler" },
-      { id: "d52_coding", label: "Coding task: Apply both scalers" },
-      { id: "d52_assignment", label: "Assignment: Compare model performance before/after" },
-      { id: "d52_git", label: "Git: Commit scaling code" }
+      { id: "d52_resources", label: "Review learning resources (all 3 topics)" },
+      { id: "d52_handson_scaling", label: "Hands-on: StandardScaler & MinMaxScaler" },
+      { id: "d52_handson_knn", label: "Hands-on: KNN with k=1, 5, 10, 20 — with/without scaling" },
+      { id: "d52_handson_svm", label: "Hands-on: SVC with linear and rbf kernel" },
+      { id: "d52_coding", label: "Coding task: Scaling + KNN + SVM + 5-model comparison table" },
+      { id: "d52_assignment", label: "Assignment: Full 5-model comparison with conclusion" },
+      { id: "d52_git", label: "Git: Commit scaling, KNN, and SVM code together" }
     ]
   },
   {
@@ -325,25 +418,45 @@ export const month3 = [
     week: 11,
     monthTitle: "Machine Learning",
     weekTitle: "Feature Engineering & Optimization",
-    topic: "ML Pipelines",
-    handsOn: ["Combine preprocessing and model", "Use sklearn.pipeline.Pipeline", "Create reusable workflows"],
-    example: "Pipeline = Scaling + Model Training",
-    codingTask: "Create a pipeline that scales features and trains a model in one step.",
-    assignment: "Rewrite your previous model code using a pipeline for cleaner code.",
-    explanation: "Pipelines make ML workflows clean, reusable, and reduce errors by automating preprocessing steps.",
-    expectedInputs: "Raw data",
-    expectedOutputs: "Pipeline object that preprocesses and predicts",
-    evaluationChecklist: ["Pipeline runs successfully", "No repeated preprocessing", "Clean implementation", "Pipeline can be saved/loaded"],
-    gitTask: "Commit pipeline-based model",
+    topic: "ML Pipelines & Handling Class Imbalance",
+    handsOn: [
+      "Combine preprocessing and model using sklearn Pipeline",
+      "Create reusable workflows with Pipeline",
+      "Understand what class imbalance is and why it is dangerous",
+      "Use class_weight='balanced' parameter in sklearn classifiers",
+      "Install imbalanced-learn: pip install imbalanced-learn",
+      "Apply SMOTE (Synthetic Minority Oversampling Technique)",
+      "Compare F1-score before and after handling imbalance"
+    ],
+    example: "Pipeline = Scaling + Model + SMOTE for Fraud Detection or Churn Prediction with imbalanced classes",
+    codingTask: "Part 1: Create a pipeline that scales features and trains a model in one step. Part 2: Take the churn dataset (typically imbalanced). (1) Train a Random Forest WITHOUT handling imbalance — note high accuracy but low recall for minority class. (2) Train with class_weight='balanced'. (3) Apply SMOTE to the training data and retrain. Compare precision, recall, and F1-score for the minority class across all three approaches.",
+    assignment: "Part 1: Rewrite your previous model code using a pipeline. Part 2: Rewrite the churn prediction Pipeline to include SMOTE before the model step. Evaluate using F1-score as the primary metric. Write a short explanation of why accuracy is misleading for imbalanced datasets.",
+    explanation: "Pipelines make ML workflows clean, reusable, and reduce errors. In real-world datasets, classes are almost never 50/50 — a fraud detection model that always predicts 'not fraud' gets 99% accuracy but catches zero fraud. Handling imbalance is the #1 real-world ML problem that beginners ignore.",
+    expectedInputs: "Raw data / Imbalanced dataset with binary target",
+    expectedOutputs: "Working pipeline model + Classification reports showing precision/recall/F1 for baseline, balanced weights, and SMOTE versions",
+    evaluationChecklist: [
+      "Pipeline runs successfully",
+      "No repeated preprocessing code",
+      "Clean implementation",
+      "Class imbalance identified in dataset",
+      "class_weight='balanced' applied",
+      "SMOTE applied correctly",
+      "F1-score used as primary metric",
+      "All three approaches compared",
+      "Written explanation of why accuracy alone is misleading"
+    ],
+    gitTask: "Commit pipeline implementation and class imbalance handling together",
     resourceLinks: [
-      { title: "ML Pipelines", url: "https://youtu.be/HZ9MUzCRlzI?si=GwSvGyBY6d9314s4" }
+      { title: "ML Pipelines", url: "https://youtu.be/HZ9MUzCRlzI?si=GwSvGyBY6d9314s4" },
+      { title: "Handling Class Imbalance (SMOTE)", url: "https://youtu.be/XfeIBAIGCKo?si=x1ndLckUT4OtA1Nv" }
     ],
     tasks: [
-      { id: "d53_resources", label: "Review learning resources" },
-      { id: "d53_handson", label: "Complete hands-on: sklearn Pipeline creation" },
-      { id: "d53_coding", label: "Coding task: Build scaling + model pipeline" },
-      { id: "d53_assignment", label: "Assignment: Rewrite previous model with pipeline" },
-      { id: "d53_git", label: "Git: Commit pipeline model" }
+      { id: "d53_resources", label: "Review learning resources (both topics)" },
+      { id: "d53_handson_pipeline", label: "Hands-on: Build sklearn Pipeline (scaling + model)" },
+      { id: "d53_handson_imbalance", label: "Hands-on: class_weight='balanced' and SMOTE" },
+      { id: "d53_coding", label: "Coding task: Pipeline + 3-way imbalance comparison" },
+      { id: "d53_assignment", label: "Assignment: Rewrite with pipeline + SMOTE + F1 evaluation" },
+      { id: "d53_git", label: "Git: Commit pipeline and class imbalance handling together" }
     ]
   },
   {
@@ -352,25 +465,47 @@ export const month3 = [
     week: 11,
     monthTitle: "Machine Learning",
     weekTitle: "Feature Engineering & Optimization",
-    topic: "Hyperparameter Tuning",
-    handsOn: ["Understand hyperparameters", "Use GridSearchCV", "Define parameter grid", "Train multiple model variations"],
-    example: "Optimizing model parameters",
-    codingTask: "Apply GridSearchCV to find the best hyperparameters for your model.",
-    assignment: "Compare model performance before and after hyperparameter tuning.",
-    explanation: "Hyperparameter tuning finds the best model settings automatically, improving accuracy significantly.",
-    expectedInputs: "Model and parameter grid",
-    expectedOutputs: "Best parameters and improved model performance",
-    evaluationChecklist: ["Grid search completes successfully", "Best parameters identified", "Model performance improved", "Cross-validation used"],
-    gitTask: "Commit hyperparameter tuning code",
+    topic: "Hyperparameter Tuning, Gradient Boosting & XGBoost",
+    handsOn: [
+      "Understand hyperparameters and use GridSearchCV",
+      "Define parameter grid and train multiple model variations",
+      "Understand boosting — trees built sequentially, each correcting errors of the previous",
+      "Understand difference: Random Forest uses bagging (parallel trees), GBM uses boosting (sequential trees)",
+      "Train GradientBoostingClassifier from sklearn.ensemble",
+      "Install and train XGBClassifier: pip install xgboost",
+      "Tune n_estimators and learning_rate using GridSearchCV"
+    ],
+    example: "GridSearchCV on model + XGBoost for Customer Churn Prediction",
+    codingTask: "Part 1: Apply GridSearchCV on a model to find the best parameters. Part 2: Train GradientBoostingClassifier and XGBClassifier on the churn dataset. Run GridSearchCV to tune n_estimators and learning_rate for XGBoost. Build a final comparison table: Logistic Regression vs Decision Tree vs Random Forest vs Gradient Boosting vs XGBoost.",
+    assignment: "Part 1: Compare model performance before and after hyperparameter tuning. Part 2: Create a final model leaderboard comparing all 6 algorithms (Logistic Regression, Decision Tree, Random Forest, KNN, SVM, XGBoost) on the same dataset using accuracy, F1-score, and training time. Pick the winner and justify your choice.",
+    explanation: "Hyperparameter tuning finds the best model settings automatically. Gradient Boosting and XGBoost are arguably the most powerful traditional ML algorithms for tabular data. XGBoost wins the majority of industry ML competitions. Understanding the difference between bagging (Random Forest) and boosting (XGBoost) is a core ML interview topic.",
+    expectedInputs: "Model and parameter grid, dataset with features and target",
+    expectedOutputs: "Best parameters, improved model performance, trained GBM and XGBoost models, final 6-model leaderboard",
+    evaluationChecklist: [
+      "Grid search completes successfully",
+      "Best parameters identified",
+      "Performance improved",
+      "GradientBoostingClassifier trained",
+      "XGBoost installed and trained",
+      "GridSearchCV applied to XGBoost",
+      "Bagging vs boosting distinction understood",
+      "Final 6-model leaderboard created",
+      "Best model selected with justification"
+    ],
+    gitTask: "Commit Gradient Boosting and XGBoost models alongside GridSearchCV tuning",
     resourceLinks: [
-      { title: "Hyperparameter Tuning", url: "https://youtu.be/HdlDYng8g9s?si=-q7-d4VMXYDC_j2D" }
+      { title: "Hyperparameter Tuning (GridSearchCV)", url: "https://youtu.be/HdlDYng8g9s?si=-q7-d4VMXYDC_j2D" },
+      { title: "Gradient Boosting", url: "https://youtu.be/en2bmeB4QUo?si=LwdQAt4_LN3LnXnj" },
+      { title: "XGBoost", url: "https://youtu.be/gPciUPwWJQQ?si=R9Z62YuDBjkNC102" }
     ],
     tasks: [
-      { id: "d54_resources", label: "Review learning resources" },
-      { id: "d54_handson", label: "Complete hands-on: GridSearchCV" },
-      { id: "d54_coding", label: "Coding task: Find optimal parameters" },
-      { id: "d54_assignment", label: "Assignment: Compare before/after tuning" },
-      { id: "d54_git", label: "Git: Commit tuning code" }
+      { id: "d54_resources", label: "Review learning resources (all 3 topics)" },
+      { id: "d54_handson_gridsearch", label: "Hands-on: GridSearchCV with parameter grid" },
+      { id: "d54_handson_gbm", label: "Hands-on: Train GradientBoostingClassifier" },
+      { id: "d54_handson_xgboost", label: "Hands-on: Install XGBoost and train XGBClassifier" },
+      { id: "d54_coding", label: "Coding task: GridSearchCV + GBM + XGBoost + comparison table" },
+      { id: "d54_assignment", label: "Assignment: 6-model leaderboard with accuracy, F1, training time" },
+      { id: "d54_git", label: "Git: Commit GridSearchCV, GBM, and XGBoost code" }
     ]
   },
   {
