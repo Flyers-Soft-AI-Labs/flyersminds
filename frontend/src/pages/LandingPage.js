@@ -426,35 +426,91 @@ export default function LandingPage() {
 
       {/* ══ ABOUT MODAL ══ */}
       {showAboutModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowAboutModal(false)}>
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="relative bg-gradient-to-br from-cyan-950 to-slate-900 p-6 border-b border-white/5">
-              <button onClick={() => setShowAboutModal(false)} className="absolute top-4 right-4 rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-              <div className="flex items-center gap-3 mb-1">
-                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
-                  <Info className="h-5 w-5" />
-                </div>
-                <h2 className="font-heading text-xl font-bold text-white">About Flyers Minds</h2>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowAboutModal(false)}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-3xl border border-white/10 bg-white dark:bg-[#0d1117] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="relative bg-gradient-to-br from-slate-900 via-cyan-950 to-slate-900 p-8">
+              <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:24px_24px]" />
+              <div className="absolute top-4 right-4">
+                <button onClick={() => setShowAboutModal(false)} className="rounded-xl p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <p className="text-sm text-slate-400 pl-1">Meet the team behind your learning journey.</p>
-            </div>
-            <div className="p-6 space-y-3 bg-white dark:bg-slate-950/50">
-              {teamMembers.map((member) => (
-                <div key={member.name} className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900 p-4">
-                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${member.gradient} text-white font-bold text-sm`}>
-                    {member.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900 dark:text-white">{member.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{member.role}</p>
-                  </div>
+              <div className="relative flex items-center gap-4 mb-4">
+                <div className="h-14 w-14 rounded-2xl overflow-hidden ring-2 ring-white/10 shadow-lg">
+                  <img src="/flyerslogo.jpg" alt="Flyers Minds" className="h-14 w-14 object-cover" />
                 </div>
-              ))}
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-400 mb-1">About Us</p>
+                  <h2 className="font-heading text-2xl font-black text-white">Flyers Minds</h2>
+                  <p className="text-sm text-slate-400">Chennai, India</p>
+                </div>
+              </div>
+              <p className="relative text-sm text-slate-300 leading-relaxed max-w-lg">
+                Flyers Minds is a structured tech learning platform based in Chennai, India — built to bridge the gap between academic knowledge and industry-ready skills through focused, mentor-driven programs.
+              </p>
             </div>
-            <div className="px-6 pb-5 text-center text-xs text-slate-400 dark:text-slate-500">
-              © {new Date().getFullYear()} Flyers Minds · Chennai, India
+
+            <div className="p-6 space-y-6">
+
+              {/* Our Programs */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400 mb-3">Our Programs</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { label: '8th – 12th Standard', sub: 'School Students', desc: 'Build coding foundations and logical thinking designed for young learners aged 13–18.', color: 'from-violet-500 to-purple-600', border: 'border-violet-500/20', bg: 'bg-violet-500/5' },
+                    { label: 'Graduate Students', sub: 'College & University', desc: 'Industry-ready programs to bridge academics and real-world tech careers for fresh graduates.', color: 'from-emerald-500 to-teal-600', border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
+                    { label: 'Professional Internship', sub: 'Industry Training', desc: 'Intensive daily-task programs with real projects and dedicated mentorship for professionals.', color: 'from-cyan-500 to-blue-600', border: 'border-cyan-500/20', bg: 'bg-cyan-500/5' },
+                  ].map((p) => (
+                    <div key={p.label} className={`rounded-2xl border ${p.border} ${p.bg} p-4`}>
+                      <div className={`inline-block text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r ${p.color} bg-clip-text text-transparent mb-2`}>{p.sub}</div>
+                      <p className="font-semibold text-sm text-slate-900 dark:text-white mb-1">{p.label}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{p.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI/ML Course */}
+              <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-600 dark:text-cyan-400 mb-2">Flagship Program</p>
+                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white mb-2">AI / ML Engineering — 120-Day Intensive</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                  Our AI/ML program is a comprehensive 120-day internship designed to take you from Python fundamentals to production-ready AI systems. It covers every layer of the modern ML stack — from data handling and model building to deep learning, RAG pipelines, and real-world deployment.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {['Python & Pandas', 'Machine Learning', 'Deep Learning', 'FastAPI Backend', 'RAG & LLMs', 'Production AI'].map((tag) => (
+                    <div key={tag} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                      <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 shrink-0" />
+                      {tag}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Team */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400 mb-3">Our Team</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {teamMembers.map((member) => (
+                    <div key={member.name} className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.03] p-3.5">
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${member.gradient} text-white font-bold text-sm`}>
+                        {member.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm text-slate-900 dark:text-white">{member.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{member.role}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            <div className="px-6 pb-6 text-center text-xs text-slate-400 border-t border-slate-100 dark:border-white/5 pt-4">
+              © {new Date().getFullYear()} Flyers Minds · Chennai, India · All rights reserved.
             </div>
           </div>
         </div>
