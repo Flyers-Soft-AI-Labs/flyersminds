@@ -6,7 +6,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import {
   Eye, EyeOff, Brain, Code2, Database, Cloud,
-  Star, BookOpen, Clock, Sun, Moon, GraduationCap, Briefcase,
+  BookOpen, Clock, Sun, Moon, GraduationCap, Briefcase,
   Lock, Mail, User, LogOut, ArrowRight, CheckCircle2,
   Play, Shield, Trophy, ChevronLeft, Layers, ArrowUpRight,
 } from 'lucide-react';
@@ -21,10 +21,10 @@ const COURSES_BY_CATEGORY = {
   school: [{ id: 'coding-foundations', title: 'Coding & Technology Foundations', subtitle: 'For Classes 8 – 12', description: 'Learn Python basics, HTML & CSS, logical thinking, and build your first mini projects — designed to spark curiosity in young minds.', tags: ['Python Basics', 'HTML & CSS', 'Logic Building', 'Web Fundamentals'], duration: '60 Days', level: 'Absolute Beginner', modules: 4, students: '150+', rating: null, Icon: GraduationCap, gradient: 'from-violet-500 to-purple-600', active: false, badge: 'Coming Soon', highlights: ['No prior coding experience needed', 'Fun, age-appropriate projects', 'Live mentor sessions every week', 'Certificate on completion'] }],
   graduate: [{ id: 'fullstack-bootcamp', title: 'Full Stack Development Bootcamp', subtitle: 'For Graduate & Final-Year Students', description: 'Modern web development, databases, REST APIs, and cloud deployment. Build portfolio-ready projects and prepare for your first tech role.', tags: ['JavaScript', 'React', 'Node.js', 'SQL', 'REST APIs'], duration: '90 Days', level: 'Beginner → Intermediate', modules: 5, students: '300+', rating: null, Icon: Layers, gradient: 'from-emerald-500 to-teal-600', active: false, badge: 'Coming Soon', highlights: ['Industry-standard tech stack', 'Portfolio projects for jobs', 'Resume & interview prep', 'Placement assistance'] }],
   internship: [
-    { id: 'aiml', title: 'AI / ML Engineering', subtitle: '120-Day Intensive', description: 'Python, FastAPI, Machine Learning, Deep Learning, RAG and Production AI.', tags: ['Python', 'ML', 'Deep Learning', 'RAG', 'FastAPI'], duration: '120 Days', modules: 6, students: '200+', rating: 4.9, Icon: Brain,    gradient: 'from-cyan-500 to-blue-600',    active: true,  badge: 'Most Popular', badgeColor: 'bg-cyan-500' },
-    { id: 'webdev',       title: 'Full Stack Web Dev',       subtitle: 'React · Node.js · MongoDB',    description: 'Modern web apps from fundamentals to production deployment.',           tags: ['React', 'Node.js', 'MongoDB', 'REST API'], duration: '90 Days',  modules: 5, students: '—',    rating: null, Icon: Code2,    gradient: 'from-violet-500 to-purple-600',active: false, badge: 'Coming Soon', badgeColor: 'bg-slate-500' },
-    { id: 'datascience',  title: 'Data Science',             subtitle: 'Python · SQL · Visualization', description: 'Data analysis, statistical modelling, and business intelligence.',         tags: ['Python', 'SQL', 'Pandas', 'Tableau'], duration: '60 Days',   modules: 4, students: '—',    rating: null, Icon: Database, gradient: 'from-emerald-500 to-teal-600',  active: false, badge: 'Coming Soon', badgeColor: 'bg-slate-500' },
-    { id: 'cloud',        title: 'Cloud & DevOps',           subtitle: 'AWS · Docker · Kubernetes',    description: 'Cloud infrastructure, CI/CD pipelines, and DevOps practices.',          tags: ['AWS', 'Docker', 'Kubernetes', 'CI/CD'], duration: '75 Days',   modules: 5, students: '—',    rating: null, Icon: Cloud,    gradient: 'from-orange-500 to-red-500',    active: false, badge: 'Coming Soon', badgeColor: 'bg-slate-500' },
+    { id: 'aiml', title: 'AI / ML Engineering', subtitle: '120-Day Intensive', description: 'Python, FastAPI, Machine Learning, Deep Learning, RAG and Production AI.', tags: ['Python', 'ML', 'Deep Learning', 'RAG', 'FastAPI'], duration: '120 Days', modules: 6, Icon: Brain,    gradient: 'from-cyan-500 to-blue-600',    active: true,  badge: 'Most Popular', badgeColor: 'bg-cyan-500' },
+    { id: 'webdev',       title: 'Full Stack Web Dev',       subtitle: 'React · Node.js · MongoDB',    description: 'Modern web apps from fundamentals to production deployment.',           tags: ['React', 'Node.js', 'MongoDB', 'REST API'], duration: '90 Days',  modules: 5, Icon: Code2,    gradient: 'from-violet-500 to-purple-600',active: false, badge: 'Coming Soon', badgeColor: 'bg-slate-500' },
+    { id: 'datascience',  title: 'Data Science',             subtitle: 'Python · SQL · Visualization', description: 'Data analysis, statistical modelling, and business intelligence.',         tags: ['Python', 'SQL', 'Pandas', 'Tableau'], duration: '60 Days',   modules: 4, Icon: Database, gradient: 'from-emerald-500 to-teal-600',  active: false, badge: 'Coming Soon', badgeColor: 'bg-slate-500' },
+    { id: 'cloud',        title: 'Cloud & DevOps',           subtitle: 'AWS · Docker · Kubernetes',    description: 'Cloud infrastructure, CI/CD pipelines, and DevOps practices.',          tags: ['AWS', 'Docker', 'Kubernetes', 'CI/CD'], duration: '75 Days',   modules: 5, Icon: Cloud,    gradient: 'from-orange-500 to-red-500',    active: false, badge: 'Coming Soon', badgeColor: 'bg-slate-500' },
   ],
 };
 
@@ -560,7 +560,6 @@ function InternCard({ course, isLoggedIn, onClick }) {
         <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-100 dark:border-white/5 pt-3 mb-4">
           <span className="flex items-center gap-1"><Clock className="h-3 w-3"/>{course.duration}</span>
           <span className="flex items-center gap-1"><BookOpen className="h-3 w-3"/>{course.modules} mod</span>
-          {course.rating && <span className="flex items-center gap-1 text-amber-500 font-bold"><Star className="h-3 w-3 fill-amber-500"/>{course.rating}</span>}
         </div>
         <button className={`w-full rounded-xl py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${active ? `bg-gradient-to-r ${gradient} text-white hover:opacity-90 hover:gap-2.5` : 'bg-slate-100 dark:bg-white/5 text-slate-400 cursor-default'}`}>
           {active ? (isLoggedIn ? <>Open <ArrowRight className="h-3.5 w-3.5"/></> : <>Enroll <ArrowRight className="h-3.5 w-3.5"/></>) : 'Coming Soon'}
