@@ -12,9 +12,9 @@ import {
 } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: 'school',     label: '8th – 12th Standard',     sublabel: 'School Students · Age 13–18',       Icon: GraduationCap, gradient: 'from-violet-600 via-purple-700 to-indigo-800',    accentClass: 'text-violet-500 dark:text-violet-400', courseCount: 1,  learners: '150+', description: 'Build strong coding and logic foundations — designed to spark curiosity in young learners.' },
-  { id: 'graduate',   label: 'Graduate Students',        sublabel: 'College & University',              Icon: BookOpen,      gradient: 'from-emerald-500 via-teal-600 to-green-700',       accentClass: 'text-emerald-500 dark:text-emerald-400', courseCount: 1, learners: '300+', description: 'Bridge academics and industry with job-ready programs built for fresh graduates.' },
-  { id: 'internship', label: 'Professional Internship',  sublabel: 'Industry Training Programs',        Icon: Briefcase,     gradient: 'from-cyan-500 via-blue-600 to-violet-700',         accentClass: 'text-cyan-500 dark:text-cyan-400', courseCount: 4,  learners: '200+', description: 'Intensive programs with daily tasks, real projects, and dedicated mentorship.' },
+  { id: 'school',     label: '8th – 12th Standard',     sublabel: 'School Students · Age 13–18',       Icon: GraduationCap, gradient: 'from-violet-600 via-purple-700 to-indigo-800',    accentClass: 'text-violet-500 dark:text-violet-400', courseCount: 1,  description: 'Build strong coding and logic foundations — designed to spark curiosity in young learners.' },
+  { id: 'graduate',   label: 'Graduate Students',        sublabel: 'College & University',              Icon: BookOpen,      gradient: 'from-emerald-500 via-teal-600 to-green-700',       accentClass: 'text-emerald-500 dark:text-emerald-400', courseCount: 1, description: 'Bridge academics and industry with job-ready programs built for fresh graduates.' },
+  { id: 'internship', label: 'Professional Internship',  sublabel: 'Industry Training Programs',        Icon: Briefcase,     gradient: 'from-cyan-500 via-blue-600 to-violet-700',         accentClass: 'text-cyan-500 dark:text-cyan-400', courseCount: 4,  description: 'Intensive programs with daily tasks, real projects, and dedicated mentorship.' },
 ];
 
 const COURSES_BY_CATEGORY = {
@@ -188,23 +188,6 @@ export default function LandingPage() {
             )}
           </div>
 
-          {/* Stats strip */}
-          <div className="mt-16 flex flex-wrap gap-x-0 gap-y-6">
-            {[
-              { val: '3',    lbl: 'Program Tracks' },
-              { val: '200+', lbl: 'Active Learners' },
-              { val: '4.9★', lbl: 'Avg Rating' },
-              { val: '120+', lbl: 'Completions' },
-            ].map(({ val, lbl }, i, arr) => (
-              <div key={lbl} className="flex items-center">
-                <div className="pr-8 sm:pr-12">
-                  <p className="font-heading text-3xl font-black text-slate-900 dark:text-white">{val}</p>
-                  <p className="text-[10px] uppercase tracking-widest text-slate-400 mt-1">{lbl}</p>
-                </div>
-                {i < arr.length - 1 && <div className="h-10 w-px bg-slate-200 dark:bg-white/10 mr-8 sm:mr-12" />}
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Scroll cue */}
@@ -292,7 +275,6 @@ export default function LandingPage() {
                 </div>
                 <div className="flex gap-8 text-center">
                   <div><p className="font-heading text-3xl font-black text-white">{activeCat?.courseCount}</p><p className="text-[10px] text-white/50 uppercase tracking-wide">Course{activeCat?.courseCount!==1?'s':''}</p></div>
-                  <div><p className="font-heading text-3xl font-black text-white">{activeCat?.learners}</p><p className="text-[10px] text-white/50 uppercase tracking-wide">Learners</p></div>
                 </div>
               </div>
             </div>
@@ -547,7 +529,6 @@ function ProgramTile({ cat, index, onSelect }) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-white">{cat.courseCount} course{cat.courseCount !== 1 ? 's' : ''}</p>
-              <p className="text-[10px] text-white/50">{cat.learners} learners</p>
             </div>
             <div className="h-10 w-10 rounded-2xl bg-white/15 flex items-center justify-center group-hover:bg-white/25 group-hover:translate-x-1 transition-all">
               <ArrowRight className="h-4 w-4 text-white" />
@@ -579,7 +560,7 @@ function InternCard({ course, isLoggedIn, onClick }) {
         <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-100 dark:border-white/5 pt-3 mb-4">
           <span className="flex items-center gap-1"><Clock className="h-3 w-3"/>{course.duration}</span>
           <span className="flex items-center gap-1"><BookOpen className="h-3 w-3"/>{course.modules} mod</span>
-          {course.rating ? <span className="flex items-center gap-1 text-amber-500 font-bold"><Star className="h-3 w-3 fill-amber-500"/>{course.rating}</span> : <span className="flex items-center gap-1"><Users className="h-3 w-3"/>{course.students}</span>}
+          {course.rating && <span className="flex items-center gap-1 text-amber-500 font-bold"><Star className="h-3 w-3 fill-amber-500"/>{course.rating}</span>}
         </div>
         <button className={`w-full rounded-xl py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${active ? `bg-gradient-to-r ${gradient} text-white hover:opacity-90 hover:gap-2.5` : 'bg-slate-100 dark:bg-white/5 text-slate-400 cursor-default'}`}>
           {active ? (isLoggedIn ? <>Open <ArrowRight className="h-3.5 w-3.5"/></> : <>Enroll <ArrowRight className="h-3.5 w-3.5"/></>) : 'Coming Soon'}
@@ -606,7 +587,7 @@ function FeaturedCard({ course, isLoggedIn, onClick }) {
         <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-5">{course.description}</p>
         <div className="flex flex-wrap gap-2 mb-5">{course.tags?.map(t=><span key={t} className="rounded-full bg-slate-100 dark:bg-white/8 px-2.5 py-0.5 text-xs text-slate-500 dark:text-slate-400">{t}</span>)}</div>
         <div className="grid grid-cols-3 gap-3 mb-6 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 p-4">
-          {[{v:course.duration,l:'Duration'},{v:course.modules,l:'Modules'},{v:course.students,l:'Learners'}].map(({v,l})=>(
+          {[{v:course.duration,l:'Duration'},{v:course.modules,l:'Modules'}].map(({v,l})=>(
             <div key={l} className="text-center"><p className="font-heading font-extrabold text-slate-900 dark:text-white">{v}</p><p className="text-[10px] text-slate-400 uppercase tracking-wide mt-0.5">{l}</p></div>
           ))}
         </div>
