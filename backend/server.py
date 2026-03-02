@@ -25,7 +25,11 @@ mongo_client_kwargs = {}
 if mongo_url.startswith("mongodb+srv://"):
     mongo_client_kwargs = {
         "tls": True,
-        "tlsCAFile": os.environ.get("MONGO_TLS_CA_FILE") or certifi.where(),
+        "tlsCAFile": certifi.where(),
+        "tlsAllowInvalidCertificates": True,
+        "serverSelectionTimeoutMS": 30000,
+        "connectTimeoutMS": 30000,
+        "socketTimeoutMS": 30000,
     }
 
 client = AsyncIOMotorClient(mongo_url, **mongo_client_kwargs)
