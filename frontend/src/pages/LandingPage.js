@@ -8,7 +8,7 @@ import {
   Eye, EyeOff, Brain, Code2, Database, Cloud,
   BookOpen, Clock, Sun, Moon, GraduationCap, Briefcase,
   Lock, Mail, User, LogOut, ArrowRight, CheckCircle2,
-  Play, Shield, Trophy, ChevronLeft, Layers, ArrowUpRight,
+  Play, Shield, Trophy, ChevronLeft, Layers, ArrowUpRight, Info, X,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -35,6 +35,14 @@ export default function LandingPage() {
 
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+
+  const teamMembers = [
+    { name: 'Uday Kanth', role: 'CEO', gradient: 'from-violet-500 to-purple-600' },
+    { name: 'Krishna Kompalli', role: 'Data Science Lead', gradient: 'from-cyan-500 to-blue-600' },
+    { name: 'Keerthi Devi', role: 'Associate Data Engineer', gradient: 'from-emerald-500 to-teal-600' },
+    { name: 'Shalini', role: 'Junior Data Scientist', gradient: 'from-orange-500 to-pink-600' },
+  ];
   const [modalTab, setModalTab] = useState('login');
   const [pendingCourse, setPendingCourse] = useState('aiml');
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -109,6 +117,9 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition">
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <button onClick={() => setShowAboutModal(true)} className="h-8 w-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition" title="About">
+              <Info className="h-4 w-4" />
             </button>
 
             {token && user ? (
@@ -412,6 +423,42 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ══ ABOUT MODAL ══ */}
+      {showAboutModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowAboutModal(false)}>
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="relative bg-gradient-to-br from-cyan-950 to-slate-900 p-6 border-b border-white/5">
+              <button onClick={() => setShowAboutModal(false)} className="absolute top-4 right-4 rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                  <Info className="h-5 w-5" />
+                </div>
+                <h2 className="font-heading text-xl font-bold text-white">About Flyers Minds</h2>
+              </div>
+              <p className="text-sm text-slate-400 pl-1">Meet the team behind your learning journey.</p>
+            </div>
+            <div className="p-6 space-y-3 bg-white dark:bg-slate-950/50">
+              {teamMembers.map((member) => (
+                <div key={member.name} className="flex items-center gap-4 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900 p-4">
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${member.gradient} text-white font-bold text-sm`}>
+                    {member.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">{member.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{member.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="px-6 pb-5 text-center text-xs text-slate-400 dark:text-slate-500">
+              © {new Date().getFullYear()} Flyers Minds · Chennai, India
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ══ AUTH MODAL ══ */}
       {showModal && (
