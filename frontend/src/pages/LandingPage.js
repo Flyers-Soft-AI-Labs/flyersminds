@@ -6,7 +6,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import {
   Eye, EyeOff, Brain, Code2, Database, Cloud,
-  Star, Users, BookOpen, Clock, Sun, Moon, GraduationCap, Briefcase,
+  Star, BookOpen, Clock, Sun, Moon, GraduationCap, Briefcase,
   Lock, Mail, User, LogOut, ArrowRight, CheckCircle2,
   Play, Shield, Trophy, ChevronLeft, Layers, ArrowUpRight,
 } from 'lucide-react';
