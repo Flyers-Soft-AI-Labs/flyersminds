@@ -105,7 +105,7 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 rounded-full border border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-slate-800/50 p-1 pr-3 transition-colors hover:bg-slate-200 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-white/20 pl-1"
+                  className="flex items-center gap-3 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 p-1 pr-3 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-white/20 pl-1"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-sm font-bold text-white shadow-lg overflow-hidden">
                     {user.avatar
@@ -115,7 +115,7 @@ export default function Navbar() {
                   </div>
                   <div className="hidden text-left sm:block">
                     <p className="text-xs font-semibold text-slate-900 dark:text-white leading-none">{user.name.split(' ')[0]}</p>
-                    <p className="text-[10px] text-cyan-600 dark:text-cyan-400 leading-none mt-0.5">{user.role}</p>
+                    <p className="text-[10px] text-cyan-600 dark:text-cyan-300 leading-none mt-0.5">{user.role}</p>
                   </div>
                 </button>
 
