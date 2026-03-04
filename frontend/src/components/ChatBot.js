@@ -227,7 +227,7 @@ export default function ChatBot() {
 
   // ── Window style ───────────────────────────────────────────────────────────
   const winStyle = isMaximised
-    ? { position: 'fixed', left: 8, top: 8, right: 8, bottom: 80, width: undefined, height: undefined }
+    ? { position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, width: undefined, height: undefined }
     : pos
       ? { position: 'fixed', left: pos.x, top: pos.y, width: size.w, height: size.h }
       : { position: 'fixed', bottom: 96, right: 24, width: DEFAULT_W, height: DEFAULT_H };
@@ -237,8 +237,8 @@ export default function ChatBot() {
     <>
       {/* ── Chat Window ── */}
       <div
-        style={{ ...winStyle, zIndex: 200 }}
-        className={`flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-300/40 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/50 transition-opacity duration-200 ${
+        style={{ ...winStyle, zIndex: isMaximised ? 1000 : 200 }}
+        className={`flex flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl shadow-slate-300/40 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/50 transition-opacity duration-200 ${isMaximised ? 'rounded-none' : 'rounded-2xl'} ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
