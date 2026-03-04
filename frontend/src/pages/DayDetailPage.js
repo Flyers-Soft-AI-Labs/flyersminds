@@ -136,6 +136,13 @@ export default function DayDetailPage() {
 
   const handleTaskToggle = async (taskId) => {
     const isCompleting = !completedTasks.includes(taskId);
+
+    // Optimistic update — reflect change immediately in the UI
+    const prevCompleted = completedTasks;
+    const newCompleted = isCompleting
+      ? [...completedTasks, taskId]
+      : completedTasks.filter((t) => t !== taskId);
+    setCompletedTasks(newCompleted);
     setLoading((prev) => ({ ...prev, [taskId]: true }));
 
     try {
@@ -144,11 +151,6 @@ export default function DayDetailPage() {
         { day_number: parseInt(dayNumber, 10), task_id: taskId, completed: isCompleting },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      const newCompleted = isCompleting
-        ? [...completedTasks, taskId]
-        : completedTasks.filter((t) => t !== taskId);
-      setCompletedTasks(newCompleted);
 
       // Mark day complete as soon as all tasks are ticked
       if (dayData && newCompleted.length === dayData.tasks.length) {
@@ -172,10 +174,12 @@ export default function DayDetailPage() {
         }
       }
     } catch (err) {
+      // Revert to previous state on failure
+      setCompletedTasks(prevCompleted);
       toast.error('Failed to update task');
     } finally {
       setLoading((prev) => ({ ...prev, [taskId]: false }));
-      // Always re-sync from server so Dashboard stays consistent
+      // Re-sync from server to keep sidebar in sync
       fetchProgress();
     }
   };

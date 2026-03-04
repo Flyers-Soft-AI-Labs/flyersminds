@@ -10,7 +10,6 @@ from pathlib import Path
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 import uuid
-import random
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
@@ -112,9 +111,9 @@ Do NOT attempt to answer out-of-scope questions even partially. Redirect immedia
 - Keep responses concise — hints should be short and focused, not overwhelming
 - If unsure about something within the curriculum, be honest and suggest reaching out to mentors at Flyers Minds"""
 
-# Email configuration (Gmail SMTP)
-SMTP_EMAIL = os.environ.get('SMTP_EMAIL', '')
-SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+# Email configuration (Brevo API)
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
+BREVO_SENDER_EMAIL = os.environ.get('BREVO_SENDER_EMAIL', '')
 FROM_NAME = os.environ.get('FROM_NAME', 'Flyers Minds')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
@@ -157,9 +156,8 @@ class ForgotPassword(BaseModel):
     email: EmailStr
 
 
-class ResetWithOTP(BaseModel):
-    email: EmailStr
-    otp: str
+class ResetPassword(BaseModel):
+    token: str
     new_password: str
 
 
@@ -215,31 +213,42 @@ def create_token(user_id: str, role: str, expires_delta: timedelta = timedelta(d
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+def create_reset_token(email: str) -> str:
+    payload = {
+        "email": email,
+        "purpose": "password_reset",
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
 
 async def send_email(to_email: str, subject: str, html_content: str):
-    """Send email via Gmail SMTP using an App Password"""
-    if not SMTP_EMAIL or not SMTP_PASSWORD:
-        print("WARNING: SMTP_EMAIL or SMTP_PASSWORD not set in .env — email not sent.")
+    """Send email via Brevo API"""
+    if not BREVO_API_KEY or not BREVO_SENDER_EMAIL:
+        print("WARNING: BREVO_API_KEY or BREVO_SENDER_EMAIL not set in .env — email not sent.")
         return False
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-    import asyncio
     try:
-        def _send():
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{FROM_NAME} <{SMTP_EMAIL}>"
-            msg['To'] = to_email
-            msg.attach(MIMEText(html_content, 'html'))
-            with smtplib.SMTP('smtp.gmail.com', 587) as server:
-                server.ehlo()
-                server.starttls()
-                server.login(SMTP_EMAIL, SMTP_PASSWORD)
-                server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
-        await asyncio.get_event_loop().run_in_executor(None, _send)
-        print(f"Email sent to {to_email}")
-        return True
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": BREVO_API_KEY,
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "sender": {"name": FROM_NAME, "email": BREVO_SENDER_EMAIL},
+                    "to": [{"email": to_email}],
+                    "subject": subject,
+                    "htmlContent": html_content,
+                },
+                timeout=15,
+            )
+        if response.status_code in (200, 201):
+            print(f"Email sent to {to_email}")
+            return True
+        else:
+            print(f"Brevo error {response.status_code}: {response.text}")
+            return False
     except Exception as e:
         print(f"Error sending email: {str(e)}")
         return False
@@ -348,21 +357,10 @@ async def admin_login(data: AdminLogin):
 async def forgot_password(data: ForgotPassword):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user:
-        return {"message": "If the email exists, an OTP has been sent"}
+        return {"message": "If the email exists, a reset link has been sent"}
 
-    otp = str(random.randint(100000, 999999))
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-
-    await db.password_resets.update_one(
-        {"email": data.email},
-        {"$set": {
-            "otp": otp,
-            "expires_at": expires_at.isoformat(),
-            "used": False,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }},
-        upsert=True
-    )
+    reset_token = create_reset_token(data.email)
+    reset_link = f"{FRONTEND_URL}/reset-password/{reset_token}"
 
     html_content = f"""
     <html>
@@ -372,44 +370,42 @@ async def forgot_password(data: ForgotPassword):
           <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Password Reset</p>
         </div>
         <div style="background: white; padding: 32px; border-radius: 16px; margin-top: 16px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
-          <p style="color: #475569; margin: 0 0 24px;">Hi {user['name']}, use the OTP below to reset your password. It expires in <strong>10 minutes</strong>.</p>
-          <div style="background: #f1f5f9; border-radius: 12px; padding: 24px; display: inline-block; min-width: 200px;">
-            <span style="font-size: 40px; font-weight: 800; letter-spacing: 10px; color: #0f172a;">{otp}</span>
-          </div>
+          <p style="color: #475569; margin: 0 0 24px;">Hi {user['name']}, click the button below to reset your password. The link expires in <strong>1 hour</strong>.</p>
+          <a href="{reset_link}" style="display: inline-block; background: linear-gradient(135deg, #0ea5e9, #6366f1); color: white; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 700; font-size: 15px;">Reset Password</a>
+          <p style="color: #94a3b8; font-size: 12px; margin: 24px 0 8px;">Or paste this link in your browser:</p>
+          <p style="color: #64748b; font-size: 12px; word-break: break-all; margin: 0;">{reset_link}</p>
           <p style="color: #94a3b8; font-size: 13px; margin: 24px 0 0;">If you didn't request this, you can safely ignore this email.</p>
         </div>
       </body>
     </html>
     """
 
-    await send_email(data.email, "Your Password Reset OTP - Flyers Minds", html_content)
-    return {"message": "If the email exists, an OTP has been sent"}
+    await send_email(data.email, "Reset Your Password - Flyers Minds", html_content)
+    return {"message": "If the email exists, a reset link has been sent"}
 
 
 @api_router.post("/auth/reset-password")
-async def reset_password(data: ResetWithOTP):
-    record = await db.password_resets.find_one({"email": data.email})
-    if not record or record.get("used"):
-        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
-
-    expires_at = datetime.fromisoformat(record["expires_at"])
-    if datetime.now(timezone.utc) > expires_at:
-        raise HTTPException(status_code=400, detail="OTP has expired. Please request a new one.")
-
-    if record["otp"] != data.otp:
-        raise HTTPException(status_code=400, detail="Incorrect OTP. Please try again.")
+async def reset_password(data: ResetPassword):
+    try:
+        payload = jwt.decode(data.token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("purpose") != "password_reset":
+            raise HTTPException(status_code=400, detail="Invalid reset token")
+        email = payload.get("email")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=400, detail="Invalid or malformed reset link")
 
     if len(data.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
 
-    await db.users.update_one(
-        {"email": data.email},
-        {"$set": {"password_hash": hash_password(data.new_password)}}
-    )
+    user = await db.users.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    await db.password_resets.update_one(
-        {"email": data.email},
-        {"$set": {"used": True}}
+    await db.users.update_one(
+        {"email": email},
+        {"$set": {"password_hash": hash_password(data.new_password), "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
 
     return {"message": "Password reset successfully"}
@@ -694,7 +690,7 @@ async def startup():
     print("="*60)
     print(f"✅ MongoDB: {os.environ.get('MONGO_URL', 'Not configured')[:50]}...")
     print(f"✅ Database: {os.environ.get('DB_NAME', 'Not configured')}")
-    print(f"✅ SMTP Email: {os.environ.get('SMTP_EMAIL', 'Not configured')}")
+    print(f"✅ Brevo Sender: {os.environ.get('BREVO_SENDER_EMAIL', 'Not configured')}")
     print(f"✅ API Routes Ready:")
     print(f"   - POST /api/auth/register")
     print(f"   - POST /api/auth/login")
