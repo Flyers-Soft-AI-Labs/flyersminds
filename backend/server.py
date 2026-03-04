@@ -37,7 +37,7 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'flyerssoft-learn-secret-2024-xk9p')
 JWT_ALGORITHM = "HS256"
 ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
-MAX_ADMINS = 3
+MAX_ADMINS = 10
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 
 CHATBOT_SYSTEM_PROMPT = """You are FlyersMind Bot, a Socratic AI tutor for Flyers Minds's 120-day AI/ML internship program based in Chennai, India.
