@@ -258,32 +258,32 @@ export default function AdminDashboard() {
             <div data-testid="admin-stats" className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="metric-card p-5">
                 <div className="mb-2 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8f6f2] text-[#0f766e]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8f6f2] dark:bg-teal-500/15 text-[#0f766e] dark:text-teal-400">
                     <Users className="h-5 w-5" />
                   </div>
-                  <span className="text-sm text-[#5f7077]">Total Interns</span>
+                  <span className="text-sm text-[#5f7077] dark:text-slate-400">Total Interns</span>
                 </div>
-                <p className="font-heading text-3xl font-semibold text-[#1a2a31]">{users.length}</p>
+                <p className="font-heading text-3xl font-semibold text-[#1a2a31] dark:text-white">{users.length}</p>
               </div>
 
               <div className="metric-card p-5">
                 <div className="mb-2 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ecf8ef] text-[#1e8a49]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ecf8ef] dark:bg-green-500/15 text-[#1e8a49] dark:text-green-400">
                     <TrendingUp className="h-5 w-5" />
                   </div>
-                  <span className="text-sm text-[#5f7077]">Average Progress</span>
+                  <span className="text-sm text-[#5f7077] dark:text-slate-400">Average Progress</span>
                 </div>
-                <p className="font-heading text-3xl font-semibold text-[#1a2a31]">{averageProgress}%</p>
+                <p className="font-heading text-3xl font-semibold text-[#1a2a31] dark:text-white">{averageProgress}%</p>
               </div>
 
               <div className="metric-card p-5">
                 <div className="mb-2 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8efff] text-[#2f57b6]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8efff] dark:bg-blue-500/15 text-[#2f57b6] dark:text-blue-400">
                     <Calendar className="h-5 w-5" />
                   </div>
-                  <span className="text-sm text-[#5f7077]">Active Today</span>
+                  <span className="text-sm text-[#5f7077] dark:text-slate-400">Active Today</span>
                 </div>
-                <p className="font-heading text-3xl font-semibold text-[#1a2a31]">{activeTodayCount}</p>
+                <p className="font-heading text-3xl font-semibold text-[#1a2a31] dark:text-white">{activeTodayCount}</p>
               </div>
             </div>
 
@@ -323,39 +323,39 @@ export default function AdminDashboard() {
                     <div key={user.id} data-testid={`intern-card-${user.id}`} className="surface-panel overflow-hidden">
                       <button
                         onClick={() => setExpandedUser(isExpanded ? null : user.id)}
-                        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[#eef7f3] sm:px-6"
+                        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[#eef7f3] dark:hover:bg-white/5 sm:px-6"
                       >
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(140deg,#0f766e,#14b8a6)] text-sm font-bold text-white">
                           {user.name?.charAt(0)?.toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-heading text-base font-semibold text-[#1a2a31]">{user.name}</p>
-                          <p className="truncate text-xs text-[#64767d]">{user.email}</p>
+                          <p className="font-heading text-base font-semibold text-[#1a2a31] dark:text-white">{user.name}</p>
+                          <p className="truncate text-xs text-[#64767d] dark:text-slate-400">{user.email}</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="hidden text-right sm:block">
-                            <p className="text-sm font-semibold text-[#1d3036]">{user.completed_days || 0}/120 days</p>
+                            <p className="text-sm font-semibold text-[#1d3036] dark:text-slate-200">{user.completed_days || 0}/120 days</p>
                             <Progress value={progressPct} className="mt-1 w-32" />
                           </div>
                           <Badge className={`text-xs ${
-                            progressPct === 100 ? 'border-[#a6dcb5] bg-[#e9f9ee] text-[#1f8a49]'
-                            : progressPct > 0  ? 'border-[#b8d4cb] bg-[#e8f6f2] text-[#0f766e]'
-                            : 'border-[#d3ddd6] bg-[#f3f6f4] text-[#61747a]'}`}>
+                            progressPct === 100 ? 'border-[#a6dcb5] bg-[#e9f9ee] text-[#1f8a49] dark:border-green-500/30 dark:bg-green-500/15 dark:text-green-400'
+                            : progressPct > 0  ? 'border-[#b8d4cb] bg-[#e8f6f2] text-[#0f766e] dark:border-teal-500/30 dark:bg-teal-500/15 dark:text-teal-400'
+                            : 'border-[#d3ddd6] bg-[#f3f6f4] text-[#61747a] dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`}>
                             {progressPct}%
                           </Badge>
                           <button
                             onClick={(e) => { e.stopPropagation(); navigate(`/admin/profile/${user.id}`); }}
-                            className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#b8d4cb] bg-[#e8f6f2] px-3 py-1.5 text-xs font-semibold text-[#0f766e] hover:bg-[#d0ede5] transition-colors"
+                            className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#b8d4cb] bg-[#e8f6f2] px-3 py-1.5 text-xs font-semibold text-[#0f766e] hover:bg-[#d0ede5] dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-400 dark:hover:bg-teal-500/20 transition-colors"
                           >
                             <FileText className="h-3.5 w-3.5" /> Resume
                           </button>
-                          {isExpanded ? <ChevronUp className="h-4 w-4 text-[#708289]" /> : <ChevronDown className="h-4 w-4 text-[#708289]" />}
+                          {isExpanded ? <ChevronUp className="h-4 w-4 text-[#708289] dark:text-slate-400" /> : <ChevronDown className="h-4 w-4 text-[#708289] dark:text-slate-400" />}
                         </div>
                       </button>
 
                       {isExpanded && (
-                        <div className="border-t border-[#dbe5de] px-5 py-4 sm:px-6">
-                          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7279]">
+                        <div className="border-t border-[#dbe5de] dark:border-white/10 px-5 py-4 sm:px-6">
+                          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7279] dark:text-slate-400">
                             Day-by-day progress (120 days)
                           </p>
                           <div className="flex flex-wrap gap-1">
@@ -368,7 +368,7 @@ export default function AdminDashboard() {
                                   className={`flex h-5 w-5 cursor-default items-center justify-center rounded text-[8px] font-semibold ${
                                     status === 'completed' ? 'bg-[#1f8a49] text-white'
                                     : status === 'in-progress' ? 'bg-[#d98814] text-white'
-                                    : 'bg-[#e6ebe8] text-[#8a989d]'}`}
+                                    : 'bg-[#e6ebe8] text-[#8a989d] dark:bg-slate-700 dark:text-slate-500'}`}
                                 >
                                   {dayNum}
                                 </div>
@@ -376,13 +376,13 @@ export default function AdminDashboard() {
                             })}
                           </div>
 
-                          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[#61747a]">
+                          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[#61747a] dark:text-slate-400">
                             <div className="flex items-center gap-1"><div className="h-3 w-3 rounded bg-[#1f8a49]" /> Completed</div>
                             <div className="flex items-center gap-1"><div className="h-3 w-3 rounded bg-[#d98814]" /> In Progress</div>
-                            <div className="flex items-center gap-1"><div className="h-3 w-3 rounded bg-[#e6ebe8]" /> Not Started</div>
+                            <div className="flex items-center gap-1"><div className="h-3 w-3 rounded bg-[#e6ebe8] dark:bg-slate-700" /> Not Started</div>
                           </div>
 
-                          <Separator className="my-4" />
+                          <Separator className="my-4 dark:bg-white/10" />
 
                           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
                             {[
@@ -398,10 +398,10 @@ export default function AdminDashboard() {
                               ).length || 0;
                               const pct = Math.round((completed / 20) * 100);
                               return (
-                                <div key={m} className="rounded-xl border border-[#d5e2d9] bg-[#f6f9f7] p-3 text-center">
-                                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#607178]">M{m}</p>
-                                  <p className="text-xs font-medium text-[#688087]">{t}</p>
-                                  <p className="font-heading mt-1 text-xl font-semibold text-[#1d2f36]">{pct}%</p>
+                                <div key={m} className="rounded-xl border border-[#d5e2d9] dark:border-white/10 bg-[#f6f9f7] dark:bg-slate-800/60 p-3 text-center">
+                                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#607178] dark:text-slate-400">M{m}</p>
+                                  <p className="text-xs font-medium text-[#688087] dark:text-slate-300">{t}</p>
+                                  <p className="font-heading mt-1 text-xl font-semibold text-[#1d2f36] dark:text-white">{pct}%</p>
                                   <Progress value={pct} className="mt-1.5 h-1.5" />
                                 </div>
                               );
