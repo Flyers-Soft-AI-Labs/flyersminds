@@ -269,7 +269,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 @api_router.post("/auth/register")
 async def register(data: UserRegister):
-    existing = await db.users.find_one({"email": data.email})
+    email = data.email.lower().strip()
+    existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -286,7 +287,7 @@ async def register(data: UserRegister):
     user_doc = {
         "id": user_id,
         "name": data.name,
-        "email": data.email,
+        "email": email,
         "password_hash": hash_password(data.password),
         "role": role,
         "course": data.course if role == "intern" else None,
@@ -299,7 +300,7 @@ async def register(data: UserRegister):
         "user": {
             "id": user_id,
             "name": data.name,
-            "email": data.email,
+            "email": email,
             "role": role
         }
     }
@@ -307,7 +308,7 @@ async def register(data: UserRegister):
 
 @api_router.post("/auth/login")
 async def login(data: UserLogin):
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    user = await db.users.find_one({"email": data.email.lower().strip()}, {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
@@ -332,8 +333,8 @@ async def admin_login(data: AdminLogin):
     # Verify admin code first
     if data.admin_code != ADMIN_CODE:
         raise HTTPException(status_code=401, detail="Invalid admin code")
-    
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+
+    user = await db.users.find_one({"email": data.email.lower().strip()}, {"_id": 0})
     if not user or not verify_password(data.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
@@ -355,11 +356,12 @@ async def admin_login(data: AdminLogin):
 
 @api_router.post("/auth/forgot-password")
 async def forgot_password(data: ForgotPassword):
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    email = data.email.lower().strip()
+    user = await db.users.find_one({"email": email}, {"_id": 0})
     if not user:
         return {"message": "If the email exists, a reset link has been sent"}
 
-    reset_token = create_reset_token(data.email)
+    reset_token = create_reset_token(email)
     reset_link = f"{FRONTEND_URL}/reset-password/{reset_token}"
 
     html_content = f"""
@@ -380,7 +382,7 @@ async def forgot_password(data: ForgotPassword):
     </html>
     """
 
-    await send_email(data.email, "Reset Your Password - Flyers Minds", html_content)
+    await send_email(email, "Reset Your Password - Flyers Minds", html_content)
     return {"message": "If the email exists, a reset link has been sent"}
 
 
