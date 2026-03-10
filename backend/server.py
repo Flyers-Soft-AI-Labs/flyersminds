@@ -196,6 +196,12 @@ class CurriculumOverride(BaseModel):
     resource_links: Optional[List[dict]] = None
 
 
+class GitSubmission(BaseModel):
+    day_number: int
+    repo_url: str
+    branch: str
+
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -534,6 +540,18 @@ async def complete_task(data: TaskComplete, user=Depends(get_current_user)):
 @api_router.post("/progress/complete-day")
 async def complete_day(data: dict, user=Depends(get_current_user)):
     day_number = data.get("day_number")
+
+    # Interns must have submitted git work before completing the day
+    if user["role"] != "admin":
+        git_sub = await db.git_submissions.find_one(
+            {"user_id": user["id"], "day_number": day_number}
+        )
+        if not git_sub:
+            raise HTTPException(
+                status_code=400,
+                detail="You must submit your Git work before completing the day"
+            )
+
     await db.progress.update_one(
         {"user_id": user["id"], "day_number": day_number},
         {"$set": {
@@ -543,6 +561,39 @@ async def complete_day(data: dict, user=Depends(get_current_user)):
         upsert=True
     )
     return {"message": "Day completed", "day_number": day_number}
+
+
+@api_router.post("/progress/submit-git")
+async def submit_git(data: GitSubmission, user=Depends(get_current_user)):
+    if user["role"] == "admin":
+        raise HTTPException(status_code=403, detail="Admins do not submit git work")
+    if not data.repo_url.strip().startswith("https://github.com/"):
+        raise HTTPException(status_code=400, detail="Repo URL must start with https://github.com/")
+    if not data.branch.strip():
+        raise HTTPException(status_code=400, detail="Branch name cannot be empty")
+
+    submission_doc = {
+        "user_id": user["id"],
+        "day_number": data.day_number,
+        "repo_url": data.repo_url.strip(),
+        "branch": data.branch.strip(),
+        "submitted_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.git_submissions.update_one(
+        {"user_id": user["id"], "day_number": data.day_number},
+        {"$set": submission_doc},
+        upsert=True
+    )
+    return submission_doc
+
+
+@api_router.get("/progress/git/{day_number}")
+async def get_git_submission(day_number: int, user=Depends(get_current_user)):
+    submission = await db.git_submissions.find_one(
+        {"user_id": user["id"], "day_number": day_number},
+        {"_id": 0}
+    )
+    return submission or {}
 
 
 @api_router.get("/admin/users")

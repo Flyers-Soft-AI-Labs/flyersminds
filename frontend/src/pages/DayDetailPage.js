@@ -26,6 +26,10 @@ import {
   HelpCircle,
   Lock,
   Circle,
+  Github,
+  Pencil,
+  Send,
+  AlertCircle,
 } from 'lucide-react';
 
 export default function DayDetailPage() {
@@ -40,6 +44,11 @@ export default function DayDetailPage() {
   const [loading, setLoading] = useState({});
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [evalChecked, setEvalChecked] = useState({});
+  const [gitSubmission, setGitSubmission] = useState(null);
+  const [gitEditing, setGitEditing] = useState(false);
+  const [gitRepo, setGitRepo] = useState('');
+  const [gitBranch, setGitBranch] = useState('');
+  const [gitLoading, setGitLoading] = useState(false);
   const [expandedMonths, setExpandedMonths] = useState(new Set());
   const [expandedWeeks, setExpandedWeeks] = useState(new Set());
   const [sidebarWidth, setSidebarWidth] = useState(240);
@@ -52,9 +61,13 @@ export default function DayDetailPage() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [dayNumber]);
 
-  // Reset eval checklist when day changes
+  // Reset eval checklist and git state when day changes
   useEffect(() => {
     setEvalChecked({});
+    setGitSubmission(null);
+    setGitEditing(false);
+    setGitRepo('');
+    setGitBranch('');
   }, [dayNumber]);
 
   // Auto-expand the current month + week in the sidebar
@@ -87,10 +100,28 @@ export default function DayDetailPage() {
     }
   }, [API, token, dayNumber]);
 
+  const fetchGitSubmission = useCallback(async () => {
+    if (isAdmin) return;
+    try {
+      const res = await axios.get(`${API}/progress/git/${dayNumber}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data && res.data.repo_url) {
+        setGitSubmission(res.data);
+        setGitRepo(res.data.repo_url);
+        setGitBranch(res.data.branch);
+        setGitEditing(false);
+      }
+    } catch (err) {
+      console.error('Failed to fetch git submission', err);
+    }
+  }, [API, token, dayNumber, isAdmin]);
+
   useEffect(() => {
     const data = getDayData(parseInt(dayNumber, 10));
     setDayData(data);
     fetchProgress();
+    fetchGitSubmission();
     // Fetch admin overrides and merge with static data
     axios.get(`${API}/curriculum/${dayNumber}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -106,7 +137,7 @@ export default function DayDetailPage() {
         });
       }
     }).catch(() => {});
-  }, [dayNumber, fetchProgress, API, token]);
+  }, [dayNumber, fetchProgress, fetchGitSubmission, API, token]);
 
   useEffect(() => {
     const onMouseMove = (e) => {
@@ -134,6 +165,31 @@ export default function DayDetailPage() {
   const isDayUnlocked = (dayNum) =>
     isAdmin || dayNum === 1 || isDayCompleted(dayNum - 1);
 
+  const attemptDayCompletion = async () => {
+    try {
+      await axios.post(
+        `${API}/progress/complete-day`,
+        { day_number: parseInt(dayNumber, 10) },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Day ${dayNumber} completed! Next day is now unlocked.`);
+      fetchProgress();
+    } catch (completionErr) {
+      // Retry once
+      try {
+        await axios.post(
+          `${API}/progress/complete-day`,
+          { day_number: parseInt(dayNumber, 10) },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success(`Day ${dayNumber} completed! Next day is now unlocked.`);
+        fetchProgress();
+      } catch (_) {
+        console.error('Failed to mark day complete:', completionErr);
+      }
+    }
+  };
+
   const handleTaskToggle = async (taskId) => {
     const isCompleting = !completedTasks.includes(taskId);
 
@@ -152,25 +208,12 @@ export default function DayDetailPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Mark day complete as soon as all tasks are ticked
+      // All tasks done — check if git is also submitted
       if (dayData && newCompleted.length === dayData.tasks.length) {
-        try {
-          await axios.post(
-            `${API}/progress/complete-day`,
-            { day_number: parseInt(dayNumber, 10) },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          toast.success(`Day ${dayNumber} completed! Next day is now unlocked.`);
-        } catch (completionErr) {
-          console.error('Failed to mark day complete:', completionErr);
-          // Retry once
-          try {
-            await axios.post(
-              `${API}/progress/complete-day`,
-              { day_number: parseInt(dayNumber, 10) },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          } catch (_) {}
+        if (isAdmin || gitSubmission) {
+          await attemptDayCompletion();
+        } else {
+          toast.info('All tasks done! Submit your Git work below to complete the day.');
         }
       }
     } catch (err) {
@@ -181,6 +224,35 @@ export default function DayDetailPage() {
       setLoading((prev) => ({ ...prev, [taskId]: false }));
       // Re-sync from server to keep sidebar in sync
       fetchProgress();
+    }
+  };
+
+  const handleGitSubmit = async () => {
+    if (!gitRepo.trim()) { toast.error('Please enter a GitHub repository URL'); return; }
+    if (!gitRepo.trim().startsWith('https://github.com/')) { toast.error('URL must start with https://github.com/'); return; }
+    if (!gitBranch.trim()) { toast.error('Please enter a branch name'); return; }
+
+    setGitLoading(true);
+    try {
+      const res = await axios.post(
+        `${API}/progress/submit-git`,
+        { day_number: parseInt(dayNumber, 10), repo_url: gitRepo.trim(), branch: gitBranch.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setGitSubmission(res.data);
+      setGitEditing(false);
+      toast.success('Git work submitted!');
+
+      // If all tasks are also done, complete the day
+      if (dayData && completedTasks.length === dayData.tasks.length) {
+        await attemptDayCompletion();
+      } else {
+        toast.info('Complete all tasks to finish the day.');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to submit Git work');
+    } finally {
+      setGitLoading(false);
     }
   };
 
@@ -214,9 +286,9 @@ export default function DayDetailPage() {
 
   const currentDay = parseInt(dayNumber, 10);
   const completionPct = Math.round((completedTasks.length / dayData.tasks.length) * 100);
-  const isCompleted = completedTasks.length === dayData.tasks.length;
+  const isDayTrulyCompleted = allProgress.some((p) => p.day_number === currentDay && p.is_completed);
   const canNavigateToPrev = currentDay > 1;
-  const canNavigateToNext = currentDay < 120 && (isAdmin || isCompleted);
+  const canNavigateToNext = currentDay < 120 && (isAdmin || isDayTrulyCompleted);
 
   const supportContacts = [
     { name: 'Krishna Kompalli', email: 'krishna.kompalli@flyerssoft.com' },
@@ -494,7 +566,7 @@ export default function DayDetailPage() {
                 <span className="min-w-[52px] text-right text-sm font-bold text-slate-700 dark:text-slate-300">
                   {completionPct}%
                 </span>
-                {isCompleted && <CheckCircle2 className="h-6 w-6 shrink-0 text-green-500" />}
+                {isDayTrulyCompleted && <CheckCircle2 className="h-6 w-6 shrink-0 text-green-500" />}
               </div>
             </div>
           </section>
@@ -536,6 +608,109 @@ export default function DayDetailPage() {
                 })}
               </div>
             </section>
+
+            {/* Git Submission — interns only */}
+            {!isAdmin && (
+              <section className={panelClass}>
+                <div className="mb-4 flex items-center gap-2">
+                  <Github className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                  <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Git Submission</h2>
+                  {gitSubmission && !gitEditing
+                    ? <span className="ml-auto flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400"><CheckCircle2 className="h-4 w-4" />Submitted</span>
+                    : <span className="ml-auto text-xs font-semibold uppercase tracking-wider text-red-500">Required</span>
+                  }
+                </div>
+
+                {gitSubmission && !gitEditing ? (
+                  // Submitted — read-only view
+                  <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Repository</p>
+                        <a href={gitSubmission.repo_url} target="_blank" rel="noopener noreferrer"
+                          className="text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:underline break-all">
+                          {gitSubmission.repo_url}
+                        </a>
+                      </div>
+                      <Button variant="outline" size="sm"
+                        onClick={() => setGitEditing(true)}
+                        className="shrink-0 gap-1.5 border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10">
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </Button>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Branch</p>
+                      <p className="font-mono text-sm text-slate-700 dark:text-slate-300">{gitSubmission.branch}</p>
+                    </div>
+                  </div>
+                ) : (
+                  // Form — new submission or editing
+                  <div className="space-y-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Push your work to GitHub and submit the repo URL + branch to complete this day.
+                    </p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          GitHub Repository URL
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://github.com/your-username/your-repo"
+                          value={gitRepo}
+                          onChange={(e) => setGitRepo(e.target.value)}
+                          disabled={gitLoading}
+                          className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          Branch Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. main, day-1, feature/day1-work"
+                          value={gitBranch}
+                          onChange={(e) => setGitBranch(e.target.value)}
+                          disabled={gitLoading}
+                          className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900 px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50"
+                        />
+                      </div>
+                    </div>
+
+                    {!gitRepo.trim().startsWith('https://github.com/') && gitRepo.trim().length > 0 && (
+                      <div className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                        URL must start with https://github.com/
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleGitSubmit}
+                        disabled={gitLoading || !gitRepo.trim() || !gitBranch.trim()}
+                        className="gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 disabled:opacity-40"
+                      >
+                        {gitLoading
+                          ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                          : <Send className="h-4 w-4" />}
+                        {gitLoading ? 'Submitting…' : 'Submit Git Work'}
+                      </Button>
+                      {gitEditing && (
+                        <Button variant="outline" onClick={() => {
+                          setGitEditing(false);
+                          setGitRepo(gitSubmission?.repo_url || '');
+                          setGitBranch(gitSubmission?.branch || '');
+                        }}
+                          className="border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* Learning Resources */}
             {dayData.resourceLinks && dayData.resourceLinks.length > 0 && (
