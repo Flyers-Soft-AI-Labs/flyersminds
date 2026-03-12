@@ -114,7 +114,6 @@ export default function AdminUserDetailPage() {
   const activeDaysCount = progress.filter(
     (p) => p.is_completed || p.completed_tasks?.length > 0 || p.git_submission
   ).length;
-  const completedDays = progress.filter((p) => p.is_completed).length;
   const progressPct = Math.round((activeDaysCount / 120) * 100);
 
   // Sorted list of day numbers that have any activity (tasks, git, or snippets)
