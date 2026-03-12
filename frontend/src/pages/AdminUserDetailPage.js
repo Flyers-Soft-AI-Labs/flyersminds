@@ -110,8 +110,10 @@ export default function AdminUserDetailPage() {
 
   if (!userData) return null;
 
+  // Count days with any activity (is_completed OR tasks started) for display
+  const activeDays = progress.filter((p) => p.is_completed || p.completed_tasks?.length > 0).length;
   const completedDays = progress.filter((p) => p.is_completed).length;
-  const progressPct = Math.round((completedDays / 120) * 100);
+  const progressPct = Math.round((activeDays / 120) * 100);
 
   // Days that have any activity (completed, in-progress, or have git/snippets)
   const activeDayNums = new Set([
@@ -174,7 +176,7 @@ export default function AdminUserDetailPage() {
 
           <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-white/10 sm:grid-cols-4">
             {[
-              { icon: Layers, label: 'Days Completed', value: `${completedDays}/120` },
+              { icon: Layers, label: 'Days Active', value: `${activeDays}/120` },
               { icon: User, label: 'Overall Progress', value: `${progressPct}%` },
               { icon: Calendar, label: 'Joined', value: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—' },
               { icon: Code2, label: 'Code Snippets', value: snippets.length },

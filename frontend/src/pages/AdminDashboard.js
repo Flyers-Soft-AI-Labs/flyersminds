@@ -406,7 +406,8 @@ export default function AdminDashboard() {
                               { m: 6, t: 'Capstone', range: [101, 120] },
                             ].map(({ m, t, range }) => {
                               const completed = user.progress?.filter(
-                                (e) => e.day_number >= range[0] && e.day_number <= range[1] && e.is_completed
+                                (e) => e.day_number >= range[0] && e.day_number <= range[1] &&
+                                  (e.is_completed || e.completed_tasks?.length > 0)
                               ).length || 0;
                               const pct = Math.round((completed / 20) * 100);
                               return (
