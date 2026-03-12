@@ -111,11 +111,11 @@ export default function AdminUserDetailPage() {
   if (!userData) return null;
 
   // Count days with any activity (is_completed OR tasks started) for display
-  const activeDays = progress.filter((p) => p.is_completed || p.completed_tasks?.length > 0).length;
+  const activeDaysCount = progress.filter((p) => p.is_completed || p.completed_tasks?.length > 0).length;
   const completedDays = progress.filter((p) => p.is_completed).length;
-  const progressPct = Math.round((activeDays / 120) * 100);
+  const progressPct = Math.round((activeDaysCount / 120) * 100);
 
-  // Days that have any activity (completed, in-progress, or have git/snippets)
+  // Sorted list of day numbers that have any activity
   const activeDayNums = new Set([
     ...progress.filter((p) => p.is_completed || p.completed_tasks?.length > 0).map((p) => p.day_number),
     ...snippets.map((s) => s.day_number),
