@@ -3,7 +3,7 @@ import { useAuth } from '../App';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { getDayData, months, curriculum } from '../data/curriculum';
-import CodeEditor from '../components/CodeEditor';
+import MultiCodeEditor from '../components/MultiCodeEditor';
 import { toast } from 'sonner';
 import { Checkbox } from '../components/ui/checkbox';
 import { Button } from '../components/ui/button';
@@ -863,7 +863,7 @@ export default function DayDetailPage() {
                 <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Try It Here</h2>
                 <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">Powered by Wandbox</span>
               </div>
-              <CodeEditor />
+              <MultiCodeEditor dayNumber={dayNumber} />
             </section>
 
             {/* Assignment */}

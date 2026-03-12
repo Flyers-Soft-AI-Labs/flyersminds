@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { Play, Terminal, ChevronDown, RotateCcw } from 'lucide-react';
+import { Play, Terminal, ChevronDown, RotateCcw, X, Save, Check } from 'lucide-react';
 
 const LANGUAGES = [
   {
@@ -35,15 +35,49 @@ const LANGUAGES = [
   },
 ];
 
-export default function CodeEditor() {
-  const [selectedLang, setSelectedLang] = useState(LANGUAGES[0]);
-  const [code, setCode] = useState(LANGUAGES[0].defaultCode);
+// storageKey – if provided, code + language selection is persisted to localStorage
+// index     – 1-based snippet number shown in the toolbar
+// onRemove  – if provided, an × button is shown to remove this editor
+export default function CodeEditor({ storageKey, index, onRemove }) {
+  const getInitialState = () => {
+    if (storageKey) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        if (saved) {
+          const lang = LANGUAGES.find((l) => l.id === saved.langId) || LANGUAGES[0];
+          return { lang, code: saved.code ?? lang.defaultCode };
+        }
+      } catch {}
+    }
+    return { lang: LANGUAGES[0], code: LANGUAGES[0].defaultCode };
+  };
+
+  const initial = getInitialState();
+  const [selectedLang, setSelectedLang] = useState(initial.lang);
+  const [code, setCode] = useState(initial.code);
   const [output, setOutput] = useState(null);
   const [running, setRunning] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
   const menuRef = useRef(null);
+  const saveTimerRef = useRef(null);
 
-  // Close dropdown when clicking outside
+  // Persist to localStorage on every code / language change (auto-save)
+  useEffect(() => {
+    if (!storageKey) return;
+    localStorage.setItem(storageKey, JSON.stringify({ langId: selectedLang.id, code }));
+  }, [storageKey, selectedLang.id, code]);
+
+  const handleSave = () => {
+    if (storageKey) {
+      localStorage.setItem(storageKey, JSON.stringify({ langId: selectedLang.id, code }));
+    }
+    setSavedFlash(true);
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setSavedFlash(false), 1500);
+  };
+
+  // Close language dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -73,10 +107,7 @@ export default function CodeEditor() {
       const res = await fetch('/api/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language: selectedLang.id,
-          code,
-        }),
+        body: JSON.stringify({ language: selectedLang.id, code }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -101,35 +132,44 @@ export default function CodeEditor() {
       {/* ── Toolbar ── */}
       <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-[#2d2d2d] px-4 py-2.5">
 
-        {/* Language selector */}
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setShowLangMenu(!showLangMenu)}
-            className="flex items-center gap-2 rounded-lg bg-[#3c3c3c] px-3 py-1.5 text-sm font-medium text-slate-200 transition-colors hover:bg-[#4c4c4c]"
-          >
-            <span className="h-2 w-2 rounded-full bg-cyan-400" />
-            {selectedLang.label}
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-          </button>
-
-          {showLangMenu && (
-            <div className="absolute left-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-white/10 bg-[#2d2d2d] shadow-2xl">
-              {LANGUAGES.map((lang) => (
-                <button
-                  key={lang.id}
-                  onClick={() => handleLangChange(lang)}
-                  className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors ${
-                    lang.id === selectedLang.id
-                      ? 'bg-cyan-600 text-white'
-                      : 'text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  {lang.id === selectedLang.id && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-                  {lang.label}
-                </button>
-              ))}
-            </div>
+        <div className="flex items-center gap-3">
+          {/* Snippet index label */}
+          {index != null && (
+            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              Snippet {index}
+            </span>
           )}
+
+          {/* Language selector */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              className="flex items-center gap-2 rounded-lg bg-[#3c3c3c] px-3 py-1.5 text-sm font-medium text-slate-200 transition-colors hover:bg-[#4c4c4c]"
+            >
+              <span className="h-2 w-2 rounded-full bg-cyan-400" />
+              {selectedLang.label}
+              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+            </button>
+
+            {showLangMenu && (
+              <div className="absolute left-0 top-full z-30 mt-1 w-44 overflow-hidden rounded-xl border border-white/10 bg-[#2d2d2d] shadow-2xl">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.id}
+                    onClick={() => handleLangChange(lang)}
+                    className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors ${
+                      lang.id === selectedLang.id
+                        ? 'bg-cyan-600 text-white'
+                        : 'text-slate-300 hover:bg-white/10'
+                    }`}
+                  >
+                    {lang.id === selectedLang.id && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right actions */}
@@ -141,6 +181,29 @@ export default function CodeEditor() {
             className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
           >
             <RotateCcw className="h-4 w-4" />
+          </button>
+
+          {/* Save */}
+          <button
+            onClick={handleSave}
+            title="Save code"
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+              savedFlash
+                ? 'bg-emerald-600/20 text-emerald-400'
+                : 'text-slate-400 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            {savedFlash ? (
+              <>
+                <Check className="h-4 w-4" />
+                <span className="text-xs">Saved</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                <span className="text-xs">Save</span>
+              </>
+            )}
           </button>
 
           {/* Run */}
@@ -156,6 +219,17 @@ export default function CodeEditor() {
             )}
             {running ? 'Running…' : 'Run'}
           </button>
+
+          {/* Remove this snippet */}
+          {onRemove && (
+            <button
+              onClick={onRemove}
+              title="Remove this snippet"
+              className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/20 hover:text-red-400"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
