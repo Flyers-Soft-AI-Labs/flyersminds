@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../App';
 import CodeEditor from './CodeEditor';
 import { Plus } from 'lucide-react';
 
@@ -10,6 +11,7 @@ function generateId() {
 }
 
 export default function MultiCodeEditor({ dayNumber }) {
+  const { token, API } = useAuth();
   const [editorIds, setEditorIds] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(listKey(dayNumber)));
@@ -52,6 +54,10 @@ export default function MultiCodeEditor({ dayNumber }) {
           storageKey={codeKey(dayNumber, id)}
           index={idx + 1}
           onRemove={editorIds.length > 1 ? () => removeEditor(id) : null}
+          token={token}
+          API={API}
+          dayNumber={dayNumber}
+          snippetId={id}
         />
       ))}
 

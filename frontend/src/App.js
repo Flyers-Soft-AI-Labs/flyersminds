@@ -9,6 +9,7 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import DayDetailPage from './pages/DayDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminUserDetailPage from './pages/AdminUserDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import LandingPage from './pages/LandingPage';
@@ -77,6 +78,7 @@ function App() {
               <Route path="/dashboard" element={token && (user?.role === 'intern' || user?.role === 'admin') ? <Dashboard /> : <Navigate to="/" replace />} />
               <Route path="/dashboard/day/:dayNumber" element={token && (user?.role === 'intern' || user?.role === 'admin') ? <DayDetailPage /> : <Navigate to="/" replace />} />
               <Route path="/admin" element={token && user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" replace />} />
+              <Route path="/admin/users/:userId" element={token && user?.role === 'admin' ? <AdminUserDetailPage /> : <Navigate to="/" replace />} />
               <Route path="/profile" element={token ? <ProfilePage /> : <Navigate to="/" replace />} />
               <Route path="/admin/profile/:userId" element={token && user?.role === 'admin' ? <ProfilePage /> : <Navigate to="/" replace />} />
               <Route path="/settings" element={token ? <SettingsPage /> : <Navigate to="/" replace />} />

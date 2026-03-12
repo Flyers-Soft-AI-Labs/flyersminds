@@ -10,7 +10,7 @@ import { Separator } from '../components/ui/separator';
 import {
   Users, ChevronDown, ChevronUp, Search, Calendar, TrendingUp, Sparkles,
   FileText, BookOpen, ChevronLeft, Brain, Code2, Database, Cloud, ArrowRight,
-  GraduationCap, Briefcase, Layers,
+  GraduationCap, Briefcase, Layers, ExternalLink,
 } from 'lucide-react';
 import { Input } from '../components/ui/input';
 
@@ -343,6 +343,12 @@ export default function AdminDashboard() {
                             : 'border-[#d3ddd6] bg-[#f3f6f4] text-[#61747a] dark:border-white/10 dark:bg-white/5 dark:text-slate-400'}`}>
                             {progressPct}%
                           </Badge>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/admin/users/${user.id}`); }}
+                            className="hidden sm:flex items-center gap-1.5 rounded-lg border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" /> View Details
+                          </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); navigate(`/admin/profile/${user.id}`); }}
                             className="hidden sm:flex items-center gap-1.5 rounded-lg border border-[#b8d4cb] bg-[#e8f6f2] px-3 py-1.5 text-xs font-semibold text-[#0f766e] hover:bg-[#d0ede5] dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-400 dark:hover:bg-teal-500/20 transition-colors"

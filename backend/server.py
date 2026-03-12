@@ -207,6 +207,17 @@ class CodeExecuteRequest(BaseModel):
     code: str
 
 
+class CodeSnippetSave(BaseModel):
+    day_number: int
+    snippet_id: str
+    language: str
+    code: str
+
+
+class AdminPasswordChange(BaseModel):
+    new_password: str
+
+
 # Compiler cache populated lazily on first execution request
 _wandbox_compiler_map: dict = {}
 
@@ -715,11 +726,59 @@ async def get_user_progress(user_id: str, user=Depends(get_current_user)):
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
-    progress = await db.progress.find(
-        {"user_id": user_id}, {"_id": 0}
-    ).to_list(1000)
+    progress = await db.progress.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+    git_subs = await db.git_submissions.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+    git_map = {g["day_number"]: g for g in git_subs}
+
+    for p in progress:
+        git = git_map.get(p["day_number"])
+        if git:
+            p["git_submission"] = {
+                "repo_url": git["repo_url"],
+                "branch": git["branch"],
+                "submitted_at": git.get("submitted_at"),
+            }
 
     return {"user": target, "progress": progress}
+
+
+@api_router.put("/admin/users/{user_id}/password")
+async def admin_change_user_password(user_id: str, data: AdminPasswordChange, user=Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    target = await db.users.find_one({"id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    hashed = bcrypt.hashpw(data.new_password.encode(), bcrypt.gensalt()).decode()
+    await db.users.update_one({"id": user_id}, {"$set": {"password_hash": hashed}})
+    return {"message": "Password updated successfully"}
+
+
+@api_router.post("/snippets")
+async def save_snippet(data: CodeSnippetSave, user=Depends(get_current_user)):
+    await db.code_snippets.update_one(
+        {"user_id": user["id"], "day_number": data.day_number, "snippet_id": data.snippet_id},
+        {"$set": {
+            "user_id": user["id"],
+            "day_number": data.day_number,
+            "snippet_id": data.snippet_id,
+            "language": data.language,
+            "code": data.code,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
+    )
+    return {"status": "saved"}
+
+
+@api_router.get("/admin/users/{user_id}/snippets")
+async def get_user_snippets(user_id: str, user=Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    snippets = await db.code_snippets.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+    return snippets
 
 
 @api_router.post("/chat")

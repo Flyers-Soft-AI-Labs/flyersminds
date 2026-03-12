@@ -36,9 +36,10 @@ const LANGUAGES = [
 ];
 
 // storageKey – if provided, code + language selection is persisted to localStorage
-// index     – 1-based snippet number shown in the toolbar
-// onRemove  – if provided, an × button is shown to remove this editor
-export default function CodeEditor({ storageKey, index, onRemove }) {
+// index      – 1-based snippet number shown in the toolbar
+// onRemove   – if provided, an × button is shown to remove this editor
+// token/API/dayNumber/snippetId – if provided, Save also persists to MongoDB
+export default function CodeEditor({ storageKey, index, onRemove, token, API, dayNumber, snippetId }) {
   const getInitialState = () => {
     if (storageKey) {
       try {
@@ -68,9 +69,26 @@ export default function CodeEditor({ storageKey, index, onRemove }) {
     localStorage.setItem(storageKey, JSON.stringify({ langId: selectedLang.id, code }));
   }, [storageKey, selectedLang.id, code]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (storageKey) {
       localStorage.setItem(storageKey, JSON.stringify({ langId: selectedLang.id, code }));
+    }
+    // Cloud save to MongoDB if auth context is provided
+    if (token && API && dayNumber && snippetId) {
+      try {
+        await fetch(`${API}/snippets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            day_number: parseInt(dayNumber, 10),
+            snippet_id: snippetId,
+            language: selectedLang.id,
+            code,
+          }),
+        });
+      } catch {
+        // Cloud save failure is non-critical; localStorage already saved
+      }
     }
     setSavedFlash(true);
     clearTimeout(saveTimerRef.current);
