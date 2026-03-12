@@ -177,11 +177,8 @@ export default function Dashboard() {
 
   const isDayCompleted = (dayNum) => {
     const p = getDayProgress(dayNum);
-    if (p?.is_completed === true) return true;
-    // Fallback: treat day as complete if all tasks are ticked even if complete-day API missed
-    const dayData = curriculum.find((d) => d.day === dayNum);
-    if (!dayData || !p?.completed_tasks) return false;
-    return p.completed_tasks.length >= dayData.tasks.length;
+    // Only truly complete when backend has confirmed it (requires git + all tasks)
+    return p?.is_completed === true;
   };
 
   const isDayUnlocked = (dayNum) => {

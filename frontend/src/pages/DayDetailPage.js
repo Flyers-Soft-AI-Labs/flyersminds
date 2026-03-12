@@ -164,12 +164,8 @@ export default function DayDetailPage() {
 
   const isDayCompleted = (dayNum) => {
     const p = allProgress.find((pr) => pr.day_number === dayNum);
-    if (p?.is_completed === true) return true;
-    // Fallback: if all tasks are ticked, treat the day as complete
-    // (handles cases where complete-day was missed but tasks are done)
-    const dayInfo = curriculum.find((d) => d.day === dayNum);
-    if (!dayInfo || !p?.completed_tasks?.length) return false;
-    return p.completed_tasks.length >= dayInfo.tasks.length;
+    // Only truly complete when backend has confirmed it (requires git + all tasks)
+    return p?.is_completed === true;
   };
 
   const isDayUnlocked = (dayNum) =>
@@ -234,6 +230,7 @@ export default function DayDetailPage() {
   };
 
   const handleGitSubmit = async () => {
+    if (!token) { toast.error('Session expired. Please log in again.'); return; }
     if (!gitRepo.trim()) { toast.error('Please enter a GitHub repository URL'); return; }
     if (!gitRepo.trim().startsWith('https://github.com/')) { toast.error('URL must start with https://github.com/'); return; }
     if (!gitBranch.trim()) { toast.error('Please enter a branch name'); return; }
@@ -249,21 +246,23 @@ export default function DayDetailPage() {
       setGitEditing(false);
       toast.success('Git work submitted!');
 
-      // Re-fetch progress to get the latest completed tasks from the server
+      // Re-fetch progress; fall back to current local state if the fetch fails
       const latestProgress = await fetchProgress();
       const dayProg = latestProgress?.find((p) => p.day_number === parseInt(dayNumber, 10));
-      const latestCompleted = dayProg?.completed_tasks || [];
+      const latestCompleted = dayProg?.completed_tasks ?? completedTasks;
 
       // If all tasks are also done, complete the day
       if (dayData && latestCompleted.length >= dayData.tasks.length) {
         await attemptDayCompletion();
       } else {
-        toast.info('Complete all the tasks above to finish the day.');
+        toast.info('All tasks must be completed to finish the day.');
       }
     } catch (err) {
       const msg = err.response?.data?.detail;
       if (err.response?.status === 401 || err.response?.status === 403) {
         toast.error('Session expired. Please log in again.');
+      } else if (!err.response) {
+        toast.error('Network error. Please check your connection and try again.');
       } else {
         toast.error(msg || 'Failed to submit Git work. Please try again.');
       }
