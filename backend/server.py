@@ -130,7 +130,7 @@ app.add_middleware(
 )
 
 api_router = APIRouter(prefix="/api")
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 class UserRegister(BaseModel):
@@ -202,6 +202,64 @@ class GitSubmission(BaseModel):
     branch: str
 
 
+class CodeExecuteRequest(BaseModel):
+    language: str
+    code: str
+
+
+# Compiler cache populated lazily on first execution request
+_wandbox_compiler_map: dict = {}
+
+# Preferred compiler prefixes per language (newest first)
+_COMPILER_PREFS = {
+    "python":     ["cpython-3.13", "cpython-3.12", "cpython-3.11", "cpython-3.10"],
+    "javascript": ["nodejs-22", "nodejs-20", "nodejs-18"],
+    "java":       ["openjdk-21", "openjdk-17"],
+    "c":          ["gcc-14", "gcc-13", "gcc-12", "gcc-11"],
+    "cpp":        ["gcc-14", "gcc-13", "gcc-12", "gcc-11"],
+}
+
+_COMPILER_FALLBACK = {
+    "python":     "cpython-3.12.5",
+    "javascript": "nodejs-20.11.0",
+    "java":       "openjdk-21.0.1",
+    "c":          "gcc-13.2.0",
+    "cpp":        "gcc-13.2.0",
+}
+
+
+async def get_wandbox_compiler_map() -> dict:
+    """Fetch available Wandbox compilers once and cache them."""
+    global _wandbox_compiler_map
+    if _wandbox_compiler_map:
+        return _wandbox_compiler_map
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get("https://wandbox.org/api/list.json")
+            if resp.status_code != 200:
+                raise ValueError(f"Wandbox list returned {resp.status_code}")
+            compiler_names = [c["name"] for c in resp.json()]
+
+        result = {}
+        for lang, prefs in _COMPILER_PREFS.items():
+            for pref in prefs:
+                match = next((n for n in compiler_names if n.startswith(pref)), None)
+                if match:
+                    result[lang] = match
+                    break
+            if lang not in result:
+                result[lang] = _COMPILER_FALLBACK[lang]
+
+        _wandbox_compiler_map = result
+        logger.info(f"Wandbox compilers selected: {_wandbox_compiler_map}")
+    except Exception as exc:
+        logger.warning(f"Wandbox compiler list fetch failed ({exc}), using fallback")
+        _wandbox_compiler_map = _COMPILER_FALLBACK.copy()
+
+    return _wandbox_compiler_map
+
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -261,16 +319,18 @@ async def send_email(to_email: str, subject: str, html_content: str):
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated. Please log in.")
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
         if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(status_code=401, detail="User not found. Please log in again.")
         return user
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
+        raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid session. Please log in again.")
 
 
 @api_router.post("/auth/register")
@@ -489,6 +549,26 @@ async def get_progress(user=Depends(get_current_user)):
     progress = await db.progress.find(
         {"user_id": user["id"]}, {"_id": 0}
     ).to_list(1000)
+
+    # Lazy-repair: if a day has a git submission + completed tasks but is_completed is
+    # still False (caused by old silent-failure bug), mark it complete now.
+    if user["role"] != "admin":
+        for p in progress:
+            if p.get("is_completed") or not p.get("completed_tasks"):
+                continue
+            git_sub = await db.git_submissions.find_one(
+                {"user_id": user["id"], "day_number": p["day_number"]}
+            )
+            if git_sub:
+                await db.progress.update_one(
+                    {"user_id": user["id"], "day_number": p["day_number"]},
+                    {"$set": {
+                        "is_completed": True,
+                        "completed_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+                p["is_completed"] = True  # also fix the in-memory copy returned now
+
     return progress
 
 
@@ -713,6 +793,59 @@ async def update_curriculum_day(day_number: int, data: CurriculumOverride, user=
         upsert=True
     )
     return {"message": "Curriculum updated", "day_number": day_number}
+
+
+@api_router.post("/execute")
+async def execute_code(data: CodeExecuteRequest):
+    """Run code via Wandbox (server-side, no CORS, no API key needed)."""
+    compiler_map = await get_wandbox_compiler_map()
+    compiler = compiler_map.get(data.language)
+    if not compiler:
+        raise HTTPException(status_code=400, detail=f"Unsupported language: {data.language}")
+
+    # Build Wandbox payload — use file extension so GCC knows C vs C++
+    if data.language == "c":
+        payload = {"compiler": compiler, "codes": [{"file": "main.c", "code": data.code}]}
+    elif data.language == "java":
+        payload = {"compiler": compiler, "codes": [{"file": "Main.java", "code": data.code}]}
+    else:
+        payload = {"compiler": compiler, "code": data.code}
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                "https://wandbox.org/api/compile.json",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+            )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"Execution service error: {resp.status_code}")
+
+        result = resp.json()
+
+        stdout = result.get("program_output", "")
+
+        stderr_parts = []
+        if result.get("compiler_error"):
+            stderr_parts.append(result["compiler_error"])
+        if result.get("program_error"):
+            stderr_parts.append(result["program_error"])
+        if result.get("signal"):
+            stderr_parts.append(f"Killed by signal: {result['signal']}")
+        stderr = "\n".join(stderr_parts)
+
+        status_str = result.get("status", "")
+        try:
+            exit_code = int(status_str)
+        except (ValueError, TypeError):
+            exit_code = 1 if stderr else 0
+
+        return {"run": {"stdout": stdout, "stderr": stderr, "code": exit_code}}
+
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Code execution timed out")
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to reach execution server: {exc}")
 
 
 @api_router.get("/health")

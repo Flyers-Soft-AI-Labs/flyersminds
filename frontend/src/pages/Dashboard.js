@@ -163,6 +163,12 @@ export default function Dashboard() {
     }
   }, [API, token]);
 
+  // Fetch on every mount so navigating back from a day always shows fresh data
+  useEffect(() => {
+    fetchProgress();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Also re-fetch whenever token/API changes (login state change)
   useEffect(() => {
     fetchProgress();
   }, [fetchProgress]);
@@ -203,7 +209,7 @@ export default function Dashboard() {
     }
   };
 
-  const totalCompleted = progress.filter((p) => p.is_completed).length;
+  const totalCompleted = curriculum.filter((d) => isDayCompleted(d.day)).length;
   const overallPercent = Math.round((totalCompleted / 120) * 100);
   const currentStreak = (() => {
     let streak = 0;

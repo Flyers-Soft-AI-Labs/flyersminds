@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../App';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { getDayData, months } from '../data/curriculum';
+import { getDayData, months, curriculum } from '../data/curriculum';
+import CodeEditor from '../components/CodeEditor';
 import { toast } from 'sonner';
 import { Checkbox } from '../components/ui/checkbox';
 import { Button } from '../components/ui/button';
@@ -95,8 +96,10 @@ export default function DayDetailPage() {
       setAllProgress(res.data);
       const dayProgress = res.data.find((p) => p.day_number === parseInt(dayNumber, 10));
       setCompletedTasks(dayProgress?.completed_tasks || []);
+      return res.data;
     } catch (err) {
       console.error('Failed to fetch progress', err);
+      return null;
     }
   }, [API, token, dayNumber]);
 
@@ -159,8 +162,15 @@ export default function DayDetailPage() {
     };
   }, []);
 
-  const isDayCompleted = (dayNum) =>
-    allProgress.some((p) => p.day_number === dayNum && p.is_completed);
+  const isDayCompleted = (dayNum) => {
+    const p = allProgress.find((pr) => pr.day_number === dayNum);
+    if (p?.is_completed === true) return true;
+    // Fallback: if all tasks are ticked, treat the day as complete
+    // (handles cases where complete-day was missed but tasks are done)
+    const dayInfo = curriculum.find((d) => d.day === dayNum);
+    if (!dayInfo || !p?.completed_tasks?.length) return false;
+    return p.completed_tasks.length >= dayInfo.tasks.length;
+  };
 
   const isDayUnlocked = (dayNum) =>
     isAdmin || dayNum === 1 || isDayCompleted(dayNum - 1);
@@ -173,19 +183,15 @@ export default function DayDetailPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success(`Day ${dayNumber} completed! Next day is now unlocked.`);
-      fetchProgress();
-    } catch (completionErr) {
-      // Retry once
-      try {
-        await axios.post(
-          `${API}/progress/complete-day`,
-          { day_number: parseInt(dayNumber, 10) },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        toast.success(`Day ${dayNumber} completed! Next day is now unlocked.`);
-        fetchProgress();
-      } catch (_) {
-        console.error('Failed to mark day complete:', completionErr);
+      await fetchProgress();
+    } catch (err) {
+      const msg = err.response?.data?.detail;
+      if (msg === 'You must submit your Git work before completing the day') {
+        toast.info('Please submit your Git work below to complete the day.');
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        toast.error('Session expired. Please log in again.');
+      } else {
+        toast.error(msg || 'Failed to complete the day. Please try again.');
       }
     }
   };
@@ -219,10 +225,10 @@ export default function DayDetailPage() {
     } catch (err) {
       // Revert to previous state on failure
       setCompletedTasks(prevCompleted);
-      toast.error('Failed to update task');
+      const msg = err.response?.data?.detail;
+      toast.error(msg || 'Failed to update task. Please try again.');
     } finally {
       setLoading((prev) => ({ ...prev, [taskId]: false }));
-      // Re-sync from server to keep sidebar in sync
       fetchProgress();
     }
   };
@@ -243,14 +249,24 @@ export default function DayDetailPage() {
       setGitEditing(false);
       toast.success('Git work submitted!');
 
+      // Re-fetch progress to get the latest completed tasks from the server
+      const latestProgress = await fetchProgress();
+      const dayProg = latestProgress?.find((p) => p.day_number === parseInt(dayNumber, 10));
+      const latestCompleted = dayProg?.completed_tasks || [];
+
       // If all tasks are also done, complete the day
-      if (dayData && completedTasks.length === dayData.tasks.length) {
+      if (dayData && latestCompleted.length >= dayData.tasks.length) {
         await attemptDayCompletion();
       } else {
-        toast.info('Complete all tasks to finish the day.');
+        toast.info('Complete all the tasks above to finish the day.');
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to submit Git work');
+      const msg = err.response?.data?.detail;
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        toast.error('Session expired. Please log in again.');
+      } else {
+        toast.error(msg || 'Failed to submit Git work. Please try again.');
+      }
     } finally {
       setGitLoading(false);
     }
@@ -286,7 +302,7 @@ export default function DayDetailPage() {
 
   const currentDay = parseInt(dayNumber, 10);
   const completionPct = Math.round((completedTasks.length / dayData.tasks.length) * 100);
-  const isDayTrulyCompleted = allProgress.some((p) => p.day_number === currentDay && p.is_completed);
+  const isDayTrulyCompleted = isDayCompleted(currentDay);
   const canNavigateToPrev = currentDay > 1;
   const canNavigateToNext = currentDay < 120 && (isAdmin || isDayTrulyCompleted);
 
@@ -573,6 +589,50 @@ export default function DayDetailPage() {
 
           <div className="space-y-6">
 
+            {/* Lesson Overview */}
+            {dayData.content && (
+              <section className={panelClass}>
+                <div className="mb-4 flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                  <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Lesson Overview</h2>
+                </div>
+
+                {dayData.overview && (
+                  <p className="mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                    {dayData.overview}
+                  </p>
+                )}
+
+                <div className="space-y-6">
+                  {dayData.content.map((section, i) => (
+                    <div key={i}>
+                      <h3 className="mb-2 text-sm font-bold text-slate-800 dark:text-slate-200">
+                        {section.heading}
+                      </h3>
+                      {section.intro && (
+                        <p className="mb-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                          {section.intro}
+                        </p>
+                      )}
+                      {section.points.length > 0 && (
+                        <ul className="space-y-2">
+                          {section.points.map((pt, j) => (
+                            <li key={j} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+                              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
+                              <span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">{pt.bold} </span>
+                                {pt.text}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Tasks */}
             <section className={panelClass}>
               <div className="mb-4 flex items-center gap-2">
@@ -794,6 +854,16 @@ export default function DayDetailPage() {
               <p className="rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50 p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-mono">
                 {dayData.codingTask}
               </p>
+            </section>
+
+            {/* In-Browser IDE */}
+            <section className={panelClass}>
+              <div className="mb-4 flex items-center gap-2">
+                <Code2 className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                <h2 className="font-heading text-xl font-semibold text-slate-900 dark:text-white">Try It Here</h2>
+                <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">Powered by Wandbox</span>
+              </div>
+              <CodeEditor />
             </section>
 
             {/* Assignment */}
