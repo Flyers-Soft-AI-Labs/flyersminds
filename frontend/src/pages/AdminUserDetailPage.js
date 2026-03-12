@@ -110,14 +110,16 @@ export default function AdminUserDetailPage() {
 
   if (!userData) return null;
 
-  // Count days with any activity (is_completed OR tasks started) for display
-  const activeDaysCount = progress.filter((p) => p.is_completed || p.completed_tasks?.length > 0).length;
+  // Count days with any activity (is_completed OR tasks started OR git submitted)
+  const activeDaysCount = progress.filter(
+    (p) => p.is_completed || p.completed_tasks?.length > 0 || p.git_submission
+  ).length;
   const completedDays = progress.filter((p) => p.is_completed).length;
   const progressPct = Math.round((activeDaysCount / 120) * 100);
 
-  // Sorted list of day numbers that have any activity
+  // Sorted list of day numbers that have any activity (tasks, git, or snippets)
   const activeDayNums = new Set([
-    ...progress.filter((p) => p.is_completed || p.completed_tasks?.length > 0).map((p) => p.day_number),
+    ...progress.filter((p) => p.is_completed || p.completed_tasks?.length > 0 || p.git_submission).map((p) => p.day_number),
     ...snippets.map((s) => s.day_number),
   ]);
 
@@ -176,7 +178,7 @@ export default function AdminUserDetailPage() {
 
           <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-white/10 sm:grid-cols-4">
             {[
-              { icon: Layers, label: 'Days Active', value: `${activeDays}/120` },
+              { icon: Layers, label: 'Days Active', value: `${activeDaysCount}/120` },
               { icon: User, label: 'Overall Progress', value: `${progressPct}%` },
               { icon: Calendar, label: 'Joined', value: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—' },
               { icon: Code2, label: 'Code Snippets', value: snippets.length },

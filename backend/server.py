@@ -706,12 +706,31 @@ async def get_all_users(course: Optional[str] = None, user=Depends(get_current_u
     ).to_list(1000)
 
     for u in users:
+        user_id_str = u.get("id")
+        if not user_id_str:
+            u["progress"] = []
+            u["completed_days"] = 0
+            u["active_days"] = 0
+            u["total_days"] = 120
+            continue
+
         progress = await db.progress.find(
-            {"user_id": u["id"]}, {"_id": 0}
+            {"user_id": user_id_str}, {"_id": 0}
         ).to_list(1000)
+        git_subs = await db.git_submissions.find(
+            {"user_id": user_id_str}, {"_id": 0}
+        ).to_list(1000)
+        git_day_nums = {g["day_number"] for g in git_subs}
+
         completed_days = sum(1 for p in progress if p.get("is_completed"))
-        # active_days = days where intern has done at least one task (fallback for display)
-        active_days = sum(1 for p in progress if p.get("is_completed") or p.get("completed_tasks"))
+        # active_days = days with any activity: tasks started, completed, OR git submitted
+        active_day_set = {
+            p["day_number"] for p in progress
+            if p.get("is_completed") or p.get("completed_tasks")
+        }
+        active_day_set.update(git_day_nums)
+        active_days = len(active_day_set)
+
         u["progress"] = progress
         u["completed_days"] = completed_days
         u["active_days"] = active_days
@@ -741,6 +760,21 @@ async def get_user_progress(user_id: str, user=Depends(get_current_user)):
                 "branch": git["branch"],
                 "submitted_at": git.get("submitted_at"),
             }
+
+    # Include days that only have a git submission (no progress record yet)
+    progress_day_nums = {p["day_number"] for p in progress}
+    for git in git_subs:
+        if git["day_number"] not in progress_day_nums:
+            progress.append({
+                "day_number": git["day_number"],
+                "completed_tasks": [],
+                "is_completed": False,
+                "git_submission": {
+                    "repo_url": git["repo_url"],
+                    "branch": git["branch"],
+                    "submitted_at": git.get("submitted_at"),
+                },
+            })
 
     return {"user": target, "progress": progress}
 
