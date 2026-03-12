@@ -73,23 +73,7 @@ export default function CodeEditor({ storageKey, index, onRemove, token, API, da
     if (storageKey) {
       localStorage.setItem(storageKey, JSON.stringify({ langId: selectedLang.id, code }));
     }
-    // Cloud save to MongoDB if auth context is provided
-    if (token && API && dayNumber && snippetId) {
-      try {
-        await fetch(`${API}/snippets`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            day_number: parseInt(dayNumber, 10),
-            snippet_id: snippetId,
-            language: selectedLang.id,
-            code,
-          }),
-        });
-      } catch {
-        // Cloud save failure is non-critical; localStorage already saved
-      }
-    }
+    await cloudSave(selectedLang.id, code);
     setSavedFlash(true);
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => setSavedFlash(false), 1500);
@@ -118,9 +102,29 @@ export default function CodeEditor({ storageKey, index, onRemove, token, API, da
     setOutput(null);
   };
 
+  const cloudSave = async (langId, currentCode) => {
+    if (!token || !API || !dayNumber || !snippetId) return;
+    try {
+      await fetch(`${API}/snippets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          day_number: parseInt(dayNumber, 10),
+          snippet_id: snippetId,
+          language: langId,
+          code: currentCode,
+        }),
+      });
+    } catch {
+      // Non-critical — silently ignore cloud save failures
+    }
+  };
+
   const handleRun = async () => {
     setRunning(true);
     setOutput(null);
+    // Auto-save to cloud every time code is run so admin can see it
+    cloudSave(selectedLang.id, code);
     try {
       const res = await fetch('/api/execute', {
         method: 'POST',

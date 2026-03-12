@@ -281,7 +281,7 @@ export default function AdminUserDetailPage() {
                                     : <Circle className="mt-0.5 h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />
                                   }
                                   <span className={`text-sm ${done ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}`}>
-                                    {task.title}
+                                    {task.label || task.title || task.id}
                                   </span>
                                 </div>
                               );
