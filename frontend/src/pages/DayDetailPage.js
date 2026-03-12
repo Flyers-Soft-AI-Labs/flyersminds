@@ -162,14 +162,21 @@ export default function DayDetailPage() {
     };
   }, []);
 
+  // Display: shows ✓ in sidebar — true when all tasks done OR backend confirmed
   const isDayCompleted = (dayNum) => {
     const p = allProgress.find((pr) => pr.day_number === dayNum);
-    // Only truly complete when backend has confirmed it (requires git + all tasks)
-    return p?.is_completed === true;
+    if (p?.is_completed === true) return true;
+    const dayInfo = curriculum.find((d) => d.day === dayNum);
+    if (!dayInfo || !p?.completed_tasks?.length) return false;
+    return p.completed_tasks.length >= dayInfo.tasks.length;
   };
 
-  const isDayUnlocked = (dayNum) =>
-    isAdmin || dayNum === 1 || isDayCompleted(dayNum - 1);
+  // Access control: next day only unlocks after backend sets is_completed (git required)
+  const isDayUnlocked = (dayNum) => {
+    if (isAdmin || dayNum === 1) return true;
+    const prev = allProgress.find((p) => p.day_number === dayNum - 1);
+    return prev?.is_completed === true;
+  };
 
   const attemptDayCompletion = async () => {
     try {
@@ -301,7 +308,10 @@ export default function DayDetailPage() {
 
   const currentDay = parseInt(dayNumber, 10);
   const completionPct = Math.round((completedTasks.length / dayData.tasks.length) * 100);
-  const isDayTrulyCompleted = isDayCompleted(currentDay);
+  // Strict check — Next button and completion badge require git to be submitted
+  const isDayTrulyCompleted = allProgress.some(
+    (p) => p.day_number === currentDay && p.is_completed === true
+  );
   const canNavigateToPrev = currentDay > 1;
   const canNavigateToNext = currentDay < 120 && (isAdmin || isDayTrulyCompleted);
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../App';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'sonner';
 import Navbar from '../components/Navbar';
 import { curriculum } from '../data/curriculum';
 import { Progress } from '../components/ui/progress';
@@ -99,6 +100,11 @@ export default function AdminDashboard() {
       setUsers(res.data);
     } catch (err) {
       console.error('Failed to fetch users', err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        toast.error('Session expired. Please log in again.');
+      } else {
+        toast.error('Failed to load interns. Please refresh the page.');
+      }
     } finally {
       setLoading(false);
     }
@@ -135,7 +141,7 @@ export default function AdminDashboard() {
 
   const averageProgress =
     users.length > 0
-      ? Math.round(users.reduce((sum, u) => sum + (u.completed_days || 0), 0) / users.length / 1.2)
+      ? Math.round(users.reduce((sum, u) => sum + (u.active_days || u.completed_days || 0), 0) / users.length / 1.2)
       : 0;
 
   const filteredUsers = users.filter(
@@ -316,7 +322,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-4">
                 {filteredUsers.map((user) => {
-                  const progressPct = Math.round(((user.completed_days || 0) / 120) * 100);
+                  const progressPct = Math.round(((user.active_days || user.completed_days || 0) / 120) * 100);
                   const isExpanded = expandedUser === user.id;
 
                   return (
@@ -334,7 +340,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="hidden text-right sm:block">
-                            <p className="text-sm font-semibold text-[#1d3036] dark:text-slate-200">{user.completed_days || 0}/120 days</p>
+                            <p className="text-sm font-semibold text-[#1d3036] dark:text-slate-200">{user.active_days || user.completed_days || 0}/120 days</p>
                             <Progress value={progressPct} className="mt-1 w-32" />
                           </div>
                           <Badge className={`text-xs ${

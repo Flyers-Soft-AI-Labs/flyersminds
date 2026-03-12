@@ -710,8 +710,11 @@ async def get_all_users(course: Optional[str] = None, user=Depends(get_current_u
             {"user_id": u["id"]}, {"_id": 0}
         ).to_list(1000)
         completed_days = sum(1 for p in progress if p.get("is_completed"))
+        # active_days = days where intern has done at least one task (fallback for display)
+        active_days = sum(1 for p in progress if p.get("is_completed") or p.get("completed_tasks"))
         u["progress"] = progress
         u["completed_days"] = completed_days
+        u["active_days"] = active_days
         u["total_days"] = 120
 
     return users

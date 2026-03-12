@@ -175,16 +175,21 @@ export default function Dashboard() {
 
   const getDayProgress = (dayNum) => progress.find((p) => p.day_number === dayNum);
 
+  // Display: shows ✓ on day cards — true when all tasks done OR backend confirmed
   const isDayCompleted = (dayNum) => {
     const p = getDayProgress(dayNum);
-    // Only truly complete when backend has confirmed it (requires git + all tasks)
-    return p?.is_completed === true;
+    if (p?.is_completed === true) return true;
+    const dayData = curriculum.find((d) => d.day === dayNum);
+    if (!dayData || !p?.completed_tasks) return false;
+    return p.completed_tasks.length >= dayData.tasks.length;
   };
 
+  // Access control: day card only clickable after previous day has is_completed (git required)
   const isDayUnlocked = (dayNum) => {
     if (isAdmin) return true;
     if (dayNum === 1) return true;
-    return isDayCompleted(dayNum - 1);
+    const prev = getDayProgress(dayNum - 1);
+    return prev?.is_completed === true;
   };
 
   const getDayCompletionPercent = (dayNum) => {
