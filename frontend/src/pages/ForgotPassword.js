@@ -91,13 +91,20 @@ export default function ForgotPassword() {
             </Button>
           </form>
 
-          <div className="mt-6 border-t border-[#d7e2da] pt-4">
+          <div className="mt-6 border-t border-[#d7e2da] pt-4 flex flex-wrap gap-4">
             <Link
               to="/login"
               className="inline-flex items-center gap-2 text-sm font-semibold text-[#0f766e] hover:text-[#0d5e59]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Login
+            </Link>
+            <Link
+              to="/admin-login"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Admin Login
             </Link>
           </div>
         </div>

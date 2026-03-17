@@ -706,35 +706,44 @@ async def get_all_users(course: Optional[str] = None, user=Depends(get_current_u
     ).to_list(1000)
 
     for u in users:
-        user_id_str = u.get("id")
-        if not user_id_str:
+        try:
+            user_id_str = u.get("id")
+            if not user_id_str:
+                u["progress"] = []
+                u["completed_days"] = 0
+                u["active_days"] = 0
+                u["total_days"] = 120
+                continue
+
+            progress = await db.progress.find(
+                {"user_id": user_id_str}, {"_id": 0}
+            ).to_list(1000)
+            git_subs = await db.git_submissions.find(
+                {"user_id": user_id_str}, {"_id": 0}
+            ).to_list(1000)
+
+            # Use .get() to avoid KeyError on any malformed records
+            git_day_nums = {g.get("day_number") for g in git_subs if g.get("day_number") is not None}
+
+            completed_days = sum(1 for p in progress if p.get("is_completed"))
+            # active_days = days with any activity: tasks started, completed, OR git submitted
+            active_day_set = {
+                p.get("day_number") for p in progress
+                if p.get("day_number") is not None and (p.get("is_completed") or p.get("completed_tasks"))
+            }
+            active_day_set.update(git_day_nums)
+            active_days = len(active_day_set)
+
+            u["progress"] = progress
+            u["completed_days"] = completed_days
+            u["active_days"] = active_days
+            u["total_days"] = 120
+        except Exception as e:
+            logger.error(f"Error fetching progress for user {u.get('id', 'unknown')}: {e}")
             u["progress"] = []
             u["completed_days"] = 0
             u["active_days"] = 0
             u["total_days"] = 120
-            continue
-
-        progress = await db.progress.find(
-            {"user_id": user_id_str}, {"_id": 0}
-        ).to_list(1000)
-        git_subs = await db.git_submissions.find(
-            {"user_id": user_id_str}, {"_id": 0}
-        ).to_list(1000)
-        git_day_nums = {g["day_number"] for g in git_subs}
-
-        completed_days = sum(1 for p in progress if p.get("is_completed"))
-        # active_days = days with any activity: tasks started, completed, OR git submitted
-        active_day_set = {
-            p["day_number"] for p in progress
-            if p.get("is_completed") or p.get("completed_tasks")
-        }
-        active_day_set.update(git_day_nums)
-        active_days = len(active_day_set)
-
-        u["progress"] = progress
-        u["completed_days"] = completed_days
-        u["active_days"] = active_days
-        u["total_days"] = 120
 
     return users
 

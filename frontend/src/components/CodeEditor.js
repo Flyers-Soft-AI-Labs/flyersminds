@@ -126,7 +126,7 @@ export default function CodeEditor({ storageKey, index, onRemove, token, API, da
     // Auto-save to cloud every time code is run so admin can see it
     cloudSave(selectedLang.id, code);
     try {
-      const res = await fetch('/api/execute', {
+      const res = await fetch(`${API}/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ language: selectedLang.id, code }),

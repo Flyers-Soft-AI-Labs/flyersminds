@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../App';
 import axios from 'axios';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Lock, CheckCircle, AlertCircle, KeyRound } from 'lucide-react';
+import { Lock, CheckCircle, AlertCircle, KeyRound, ArrowLeft } from 'lucide-react';
 
 export default function ResetPassword() {
   const { token } = useParams();
-  const navigate = useNavigate();
   const { API } = useAuth();
 
   const [newPassword, setNewPassword] = useState('');
@@ -48,9 +47,6 @@ export default function ResetPassword() {
       });
 
       setSuccess(true);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to reset password. The link may have expired.');
     } finally {
@@ -68,9 +64,14 @@ export default function ResetPassword() {
             </div>
             <h2 className="font-heading text-3xl font-semibold surface-title">Password Updated</h2>
             <p className="mt-2 text-sm surface-copy">Your password was reset successfully.</p>
-            <p className="mt-2 text-xs uppercase tracking-[0.1em] text-[#617379]">
-              Redirecting to login in a moment...
-            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-4">
+              <Link to="/login" className="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300">
+                <ArrowLeft className="h-4 w-4" /> Go to Login
+              </Link>
+              <Link to="/admin-login" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                <ArrowLeft className="h-4 w-4" /> Go to Admin Login
+              </Link>
+            </div>
           </div>
         </div>
       </div>

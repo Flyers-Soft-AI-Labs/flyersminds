@@ -55,11 +55,8 @@ export default function AdminDashboard() {
   const { token, API } = useAuth();
   const navigate = useNavigate();
 
-  const internshipCategory = CATEGORIES.find((c) => c.id === 'internship');
-  const aimlCourse = internshipCategory.courses.find((c) => c.id === 'aiml');
-
-  const [selectedCategory] = useState(internshipCategory);
-  const [selectedCourse, setSelectedCourse] = useState(aimlCourse);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedUser, setExpandedUser] = useState(null);
@@ -68,7 +65,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchCourseCounts();
-    fetchUsers('aiml');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -111,12 +107,27 @@ export default function AdminDashboard() {
   };
 
   // Level helpers
+  const handleCategorySelect = (cat) => {
+    setSelectedCategory(cat);
+    setSelectedCourse(null);
+    setUsers([]);
+    setExpandedUser(null);
+    setSearchQuery('');
+  };
+
+  const handleBackToCategories = () => {
+    setSelectedCategory(null);
+    setSelectedCourse(null);
+    setUsers([]);
+    setExpandedUser(null);
+    setSearchQuery('');
+  };
+
   const handleCourseSelect = (course) => {
     if (!course.active) return;
     setSelectedCourse(course);
     fetchUsers(course.id);
   };
-
 
   const handleBackToCourses = () => {
     setSelectedCourse(null);
@@ -168,7 +179,7 @@ export default function AdminDashboard() {
     ? `Interns enrolled in ${selectedCourse.title} · ${selectedCourse.subtitle}`
     : selectedCategory
     ? `${selectedCategory.courses.length} course${selectedCategory.courses.length !== 1 ? 's' : ''} · ${getCategoryInternCount(selectedCategory)} intern${getCategoryInternCount(selectedCategory) !== 1 ? 's' : ''}`
-    : 'Select a course to view enrolled interns and monitor their progress.';
+    : 'Select a category to view courses and monitor intern progress.';
 
   return (
     <div className="mesh-bg min-h-screen pb-12">
@@ -181,13 +192,29 @@ export default function AdminDashboard() {
           <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               {/* Breadcrumb */}
-              {selectedCourse && (
+              {(selectedCategory || selectedCourse) && (
                 <div className="mb-3 flex items-center gap-1.5 text-xs text-slate-400">
-                  <button onClick={handleBackToCourses} className="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
-                    Courses
+                  <button onClick={handleBackToCategories} className="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
+                    Categories
                   </button>
-                  <ChevronLeft className="h-3 w-3 rotate-180" />
-                  <span className="text-slate-600 dark:text-slate-300 font-semibold">{selectedCourse.title}</span>
+                  {selectedCategory && (
+                    <>
+                      <ChevronLeft className="h-3 w-3 rotate-180" />
+                      {selectedCourse ? (
+                        <button onClick={handleBackToCourses} className="hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
+                          {selectedCategory.label}
+                        </button>
+                      ) : (
+                        <span className="text-slate-600 dark:text-slate-300 font-semibold">{selectedCategory.label}</span>
+                      )}
+                    </>
+                  )}
+                  {selectedCourse && (
+                    <>
+                      <ChevronLeft className="h-3 w-3 rotate-180" />
+                      <span className="text-slate-600 dark:text-slate-300 font-semibold">{selectedCourse.title}</span>
+                    </>
+                  )}
                 </div>
               )}
               <p className="kicker mb-3"><Sparkles className="h-3.5 w-3.5" />Admin Intelligence</p>
@@ -201,6 +228,11 @@ export default function AdminDashboard() {
                   <ChevronLeft className="h-4 w-4" /> Back to Courses
                 </button>
               )}
+              {selectedCategory && !selectedCourse && (
+                <button onClick={handleBackToCategories} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">
+                  <ChevronLeft className="h-4 w-4" /> Back to Categories
+                </button>
+              )}
               <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors">
                 <BookOpen className="h-4 w-4" /> Browse Course
               </button>
@@ -208,6 +240,49 @@ export default function AdminDashboard() {
           </div>
         </section>
 
+
+        {/* ══ LEVEL 1 — Category selection ══ */}
+        {!selectedCategory && !selectedCourse && (
+          <>
+            <p className="mb-5 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+              Select a Category
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {CATEGORIES.map((cat) => {
+                const { Icon, gradient } = cat;
+                const count = getCategoryInternCount(cat);
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategorySelect(cat)}
+                    className="group relative overflow-hidden rounded-2xl text-left transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl cursor-pointer"
+                  >
+                    <div className={`relative bg-gradient-to-br ${gradient} p-6 pb-5`}>
+                      <div className="absolute inset-0 bg-black/20" />
+                      <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:18px_18px]" />
+                      <div className="relative flex items-start justify-between mb-10">
+                        <div className="h-12 w-12 rounded-2xl bg-white/15 flex items-center justify-center">
+                          <Icon className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <h3 className="font-heading font-bold text-white text-lg leading-snug mb-0.5">{cat.label}</h3>
+                        <p className="text-[11px] text-white/60">{cat.sublabel}</p>
+                      </div>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900/80 border border-t-0 border-slate-200 dark:border-white/8 rounded-b-2xl px-5 py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <Users className="h-4 w-4 text-slate-400" />
+                        {count} intern{count !== 1 ? 's' : ''}
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-cyan-500 group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* ══ LEVEL 2 — Courses within selected category ══ */}
         {selectedCategory && !selectedCourse && (

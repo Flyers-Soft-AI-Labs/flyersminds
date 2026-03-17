@@ -162,13 +162,12 @@ export default function DayDetailPage() {
     };
   }, []);
 
-  // Display: shows ✓ in sidebar — true when all tasks done OR backend confirmed
+  // Display: shows ✓ in sidebar — only when backend has confirmed is_completed
+  // Using is_completed as sole source of truth prevents adding new curriculum tasks
+  // from visually reverting a day that was already completed.
   const isDayCompleted = (dayNum) => {
     const p = allProgress.find((pr) => pr.day_number === dayNum);
-    if (p?.is_completed === true) return true;
-    const dayInfo = curriculum.find((d) => d.day === dayNum);
-    if (!dayInfo || !p?.completed_tasks?.length) return false;
-    return p.completed_tasks.length >= dayInfo.tasks.length;
+    return p?.is_completed === true;
   };
 
   // Access control: next day only unlocks after backend sets is_completed (git required)

@@ -199,6 +199,99 @@ export default function AdminUserDetailPage() {
           </div>
         </div>
 
+        {/* ── Git Submissions Summary ── */}
+        {(() => {
+          const gitSubmissions = progress
+            .filter((p) => p.git_submission)
+            .sort((a, b) => a.day_number - b.day_number);
+          if (gitSubmissions.length === 0) return null;
+          return (
+            <div className="mb-8">
+              <h2 className="mb-4 font-heading text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <Github className="h-5 w-5 text-slate-400" />
+                Git Submissions ({gitSubmissions.length})
+              </h2>
+              <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/60">
+                <div className="divide-y divide-slate-100 dark:divide-white/10">
+                  {gitSubmissions.map(({ day_number, git_submission }) => {
+                    const dayInfo = curriculum.find((d) => d.day === day_number);
+                    return (
+                      <div key={day_number} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
+                        <span className="shrink-0 text-xs font-bold text-slate-400 w-10">Day {day_number}</span>
+                        {dayInfo?.topic && (
+                          <span className="hidden sm:block text-xs text-slate-500 truncate max-w-[160px]">{dayInfo.topic}</span>
+                        )}
+                        <Github className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        <a
+                          href={git_submission.repo_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 min-w-0 truncate text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
+                        >
+                          {git_submission.repo_url}
+                        </a>
+                        <code className="shrink-0 rounded bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-mono text-slate-600 dark:text-slate-300">
+                          {git_submission.branch}
+                        </code>
+                        {git_submission.submitted_at && (
+                          <span className="shrink-0 text-xs text-slate-400">
+                            {new Date(git_submission.submitted_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Code Snippets Summary ── */}
+        {snippets.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-4 font-heading text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Code2 className="h-5 w-5 text-slate-400" />
+              Saved Code Snippets ({snippets.length})
+            </h2>
+            <div className="space-y-3">
+              {Object.entries(snippetsByDay)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([dayNum, daySnips]) => (
+                  <div key={dayNum} className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/60">
+                    <div className="flex items-center gap-3 border-b border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 px-4 py-2.5">
+                      <span className="text-xs font-bold text-slate-500">Day {dayNum}</span>
+                      <span className="text-xs text-slate-400 truncate">
+                        {curriculum.find((d) => d.day === Number(dayNum))?.topic || ''}
+                      </span>
+                      <span className="ml-auto text-xs text-slate-400">{daySnips.length} snippet{daySnips.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="divide-y divide-slate-100 dark:divide-white/10">
+                      {daySnips.map((snip, idx) => (
+                        <div key={snip.snippet_id}>
+                          <div className="flex items-center gap-3 bg-[#2d2d2d] px-4 py-2">
+                            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Snippet {idx + 1}</span>
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${LANG_COLORS[snip.language] || 'bg-slate-500/15 text-slate-400 border-slate-500/20'}`}>
+                              {snip.language}
+                            </span>
+                            {snip.saved_at && (
+                              <span className="ml-auto text-[10px] text-slate-500">
+                                {new Date(snip.saved_at).toLocaleString('en-IN')}
+                              </span>
+                            )}
+                          </div>
+                          <pre className="max-h-60 overflow-y-auto bg-[#1e1e1e] p-4 text-sm font-mono text-slate-200 leading-relaxed whitespace-pre-wrap">
+                            {snip.code}
+                          </pre>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Day-by-Day Progress ── */}
         <h2 className="mb-4 font-heading text-lg font-semibold text-slate-900 dark:text-white">
           Day-by-Day Activity
