@@ -713,6 +713,7 @@ async def get_all_users(course: Optional[str] = None, user=Depends(get_current_u
                 u["completed_days"] = 0
                 u["active_days"] = 0
                 u["total_days"] = 120
+                u["git_submissions"] = []
                 continue
 
             progress = await db.progress.find(
