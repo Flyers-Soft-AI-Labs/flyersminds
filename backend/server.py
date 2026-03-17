@@ -738,12 +738,23 @@ async def get_all_users(course: Optional[str] = None, user=Depends(get_current_u
             u["completed_days"] = completed_days
             u["active_days"] = active_days
             u["total_days"] = 120
+            u["git_submissions"] = [
+                {
+                    "day_number": g.get("day_number"),
+                    "repo_url": g.get("repo_url"),
+                    "branch": g.get("branch"),
+                    "submitted_at": g.get("submitted_at"),
+                }
+                for g in git_subs
+                if g.get("day_number") and g.get("repo_url")
+            ]
         except Exception as e:
             logger.error(f"Error fetching progress for user {u.get('id', 'unknown')}: {e}")
             u["progress"] = []
             u["completed_days"] = 0
             u["active_days"] = 0
             u["total_days"] = 120
+            u["git_submissions"] = []
 
     return users
 
