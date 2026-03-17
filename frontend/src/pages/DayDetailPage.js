@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../App';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { getDayData, months, curriculum } from '../data/curriculum';
+import { getDayData, months } from '../data/curriculum';
 import MultiCodeEditor from '../components/MultiCodeEditor';
 import { toast } from 'sonner';
 import { Checkbox } from '../components/ui/checkbox';
