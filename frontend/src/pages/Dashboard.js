@@ -99,9 +99,11 @@ export default function Dashboard() {
   };
 
   const fetchOverrides = useCallback(async () => {
-    if (!isAdmin) return;
     try {
-      const res = await axios.get(`${API}/admin/curriculum/overrides`, {
+      const endpoint = isAdmin
+        ? `${API}/admin/curriculum/overrides`
+        : `${API}/curriculum/overrides`;
+      const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const map = {};
@@ -111,6 +113,10 @@ export default function Dashboard() {
       console.error('Failed to fetch curriculum overrides', err);
     }
   }, [API, token, isAdmin]);
+
+  useEffect(() => {
+    fetchOverrides();
+  }, [fetchOverrides]);
 
   useEffect(() => {
     if (isAdmin && adminSelectedCourse) {
@@ -498,6 +504,7 @@ export default function Dashboard() {
             isDayCompleted={isDayCompleted}
             getDayCompletionPercent={getDayCompletionPercent}
             handleDayClick={handleDayClick}
+            overrides={curriculumOverrides}
           />
         )}
       </main>
@@ -624,6 +631,17 @@ function Button({ className, ...props }) {
 }
 
 function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDayUnlocked, isDayCompleted, getDayCompletionPercent, handleDayClick, isAdmin = false, overrides = {}, onEditDay }) {
+  const [expandedDay, setExpandedDay] = useState(null);
+
+  const handleRowClick = (dayNum, unlocked) => {
+    if (isAdmin && onEditDay) {
+      // Admin Course Access: toggle inline notes panel
+      setExpandedDay((prev) => (prev === dayNum ? null : dayNum));
+    } else {
+      handleDayClick(dayNum, unlocked);
+    }
+  };
+
   return (
     <Tabs value={activeMonth} onValueChange={setActiveMonth} className="w-full">
       <div className="mb-8 overflow-x-auto pb-2">
@@ -701,16 +719,19 @@ function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDay
                         lowerTopic.includes('capstone') ||
                         lowerTopic.includes('final project');
 
+                      const isExpanded = expandedDay === dayNum;
+
                       return (
                         <div
                           key={dayNum}
-                          className={`group flex w-full items-center transition-all ${unlocked
+                          className={`group w-full transition-all ${unlocked
                             ? 'hover:bg-slate-100 dark:hover:bg-white/5'
                             : 'hover:bg-slate-50 dark:hover:bg-transparent'
                             }`}
                         >
+                          <div className="flex w-full items-center">
                           <button
-                            onClick={() => handleDayClick(dayNum, unlocked)}
+                            onClick={() => handleRowClick(dayNum, unlocked)}
                             className={`flex flex-1 items-center gap-5 px-6 py-4 text-left ${unlocked ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                           >
                             <div className="shrink-0 relative">
@@ -782,6 +803,49 @@ function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDay
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
+                          )}
+                          </div>
+
+                          {/* Inline notes panel — admin Course Access only */}
+                          {isAdmin && onEditDay && isExpanded && (
+                            <div className="border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/40 px-6 py-5 space-y-5">
+                              {dayData.overview && (
+                                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                                  {dayData.overview}
+                                </p>
+                              )}
+                              {dayData.content && dayData.content.length > 0 ? (
+                                <div className="space-y-4">
+                                  {dayData.content.map((section, si) => (
+                                    <div key={si}>
+                                      <h4 className="mb-1.5 text-sm font-bold text-slate-800 dark:text-slate-200">
+                                        {section.heading}
+                                      </h4>
+                                      {section.intro && (
+                                        <p className="mb-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                                          {section.intro}
+                                        </p>
+                                      )}
+                                      {section.points && section.points.length > 0 && (
+                                        <ul className="space-y-1.5">
+                                          {section.points.map((pt, pi) => (
+                                            <li key={pi} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+                                              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
+                                              <span>
+                                                <span className="font-semibold text-slate-800 dark:text-slate-200">{pt.bold} </span>
+                                                {pt.text}
+                                              </span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-slate-400 dark:text-slate-500 italic">No lesson notes added for this day yet.</p>
+                              )}
+                            </div>
                           )}
                         </div>
                       );

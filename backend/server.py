@@ -878,6 +878,12 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
             raise HTTPException(status_code=502, detail="service_error")
 
 
+@api_router.get("/curriculum/overrides")
+async def get_curriculum_overrides_all(user=Depends(get_current_user)):
+    overrides = await db.curriculum_overrides.find({}, {"_id": 0}).to_list(1000)
+    return overrides
+
+
 @api_router.get("/curriculum/{day_number}")
 async def get_curriculum_override(day_number: int, user=Depends(get_current_user)):
     override = await db.curriculum_overrides.find_one({"day_number": day_number}, {"_id": 0})
