@@ -241,6 +241,27 @@ export default function Dashboard() {
       <Navbar />
       <main className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
 
+        {/* Check Where You Are — Quiz card (intern only) */}
+        {!isAdmin && (
+          <div className="mb-8 overflow-hidden rounded-2xl border border-purple-200 dark:border-purple-500/20 bg-gradient-to-r from-purple-50 dark:from-purple-950/20 to-indigo-50 dark:to-indigo-950/20 p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/30">
+                <ListChecks className="h-6 w-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Check Where You Are</h3>
+                <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">Take this 20-question self-assessment quiz covering Python, FastAPI, ML, Deep Learning &amp; RAG to test your knowledge.</p>
+              </div>
+              <button
+                onClick={() => navigate('/quiz')}
+                className="shrink-0 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/20 transition-all whitespace-nowrap"
+              >
+                Start Quiz →
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Welcome Section */}
         <section className="relative mb-10 overflow-hidden rounded-2xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 p-8 backdrop-blur-md shadow-md dark:shadow-none">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 dark:bg-cyan-500/20 blur-3xl" />
@@ -361,27 +382,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>}
-
-        {/* Check Where You Are — Quiz card (intern only) */}
-        {!isAdmin && (
-          <div className="mb-8 overflow-hidden rounded-2xl border border-purple-200 dark:border-purple-500/20 bg-gradient-to-r from-purple-50 dark:from-purple-950/20 to-indigo-50 dark:to-indigo-950/20 p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/30">
-                <ListChecks className="h-6 w-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Check Where You Are</h3>
-                <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">Take this 20-question self-assessment quiz covering Python, FastAPI, ML, Deep Learning &amp; RAG to test your knowledge.</p>
-              </div>
-              <button
-                onClick={() => navigate('/quiz')}
-                className="shrink-0 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/20 transition-all whitespace-nowrap"
-              >
-                Start Quiz →
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Admin: Course Browser (shown only when Course Access button clicked) */}
         {isAdmin && browsingCourses && (
