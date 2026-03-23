@@ -12,6 +12,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminUserDetailPage from './pages/AdminUserDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import QuizPage from './pages/QuizPage';
 import LandingPage from './pages/LandingPage';
 import Background from './components/Background';
 import ChatBot from './components/ChatBot';
@@ -82,6 +83,7 @@ function App() {
               <Route path="/profile" element={token ? <ProfilePage /> : <Navigate to="/" replace />} />
               <Route path="/admin/profile/:userId" element={token && user?.role === 'admin' ? <ProfilePage /> : <Navigate to="/" replace />} />
               <Route path="/settings" element={token ? <SettingsPage /> : <Navigate to="/" replace />} />
+              <Route path="/quiz" element={token && (user?.role === 'intern' || user?.role === 'admin') ? <QuizPage /> : <Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           )}
