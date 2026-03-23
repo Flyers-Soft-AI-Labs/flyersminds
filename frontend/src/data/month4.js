@@ -401,7 +401,8 @@ export const month4 = [
       },
       {
         heading: "2. Multi-Head Self-Attention",
-        intro: "Once embeddings are position-aware, they pass into the Multi-Head Attention layer (which we explored yesterday). Here, words look at each other, compute Query-Key-Value similarity scores, and absorb context from their neighbors."
+        intro: "Once embeddings are position-aware, they pass into the Multi-Head Attention layer (which we explored yesterday). Here, words look at each other, compute Query-Key-Value similarity scores, and absorb context from their neighbors.",
+        points: []
       },
       {
         heading: "3. Residual Connections and Layer Normalization",

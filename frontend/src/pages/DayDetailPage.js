@@ -622,7 +622,7 @@ export default function DayDetailPage() {
                           {section.intro}
                         </p>
                       )}
-                      {section.points.length > 0 && (
+                      {section.points && section.points.length > 0 && (
                         <ul className="space-y-2">
                           {section.points.map((pt, j) => (
                             <li key={j} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-400">
