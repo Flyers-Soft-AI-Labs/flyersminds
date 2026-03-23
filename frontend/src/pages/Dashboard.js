@@ -31,6 +31,11 @@ import {
   Plus,
   Trash2,
   X,
+  ListChecks,
+  FileText,
+  GitBranch,
+  Lightbulb,
+  ExternalLink,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -806,58 +811,205 @@ function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDay
                           )}
                           </div>
 
-                          {/* Inline notes panel — admin Course Access only */}
+                          {/* Inline full-detail panel — admin Course Access only */}
                           {isAdmin && onEditDay && isExpanded && (
-                            <div className="border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/40 px-6 py-5 space-y-5">
-                              {dayData.overview && (
-                                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                                  {dayData.overview}
-                                </p>
-                              )}
-                              {dayData.content && dayData.content.length > 0 ? (
-                                <div className="space-y-4">
-                                  {dayData.content.map((section, si) => (
-                                    <div key={si}>
-                                      <h4 className="mb-1.5 text-sm font-bold text-slate-800 dark:text-slate-200">
-                                        {section.heading}
-                                      </h4>
-                                      {section.intro && (
-                                        <p className="mb-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                                          {section.intro}
-                                        </p>
-                                      )}
-                                      {section.points && section.points.length > 0 && (
-                                        <ul className="space-y-1.5">
-                                          {section.points.map((pt, pi) => (
-                                            <li key={pi} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-400">
-                                              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
-                                              <span>
-                                                <span className="font-semibold text-slate-800 dark:text-slate-200">{pt.bold} </span>
-                                                {pt.text}
-                                              </span>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      )}
-                                    </div>
-                                  ))}
+                            <div className="border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/40 px-6 py-6 space-y-6">
+
+                              {/* Lesson Overview */}
+                              <div className="space-y-4">
+                                <div className="flex items-center gap-2">
+                                  <BookOpen className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Lesson Overview</h4>
                                 </div>
-                              ) : (
-                                <p className="text-sm text-slate-400 dark:text-slate-500 italic">No lesson notes added for this day yet.</p>
-                              )}
+                                {dayData.overview && (
+                                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{dayData.overview}</p>
+                                )}
+                                {dayData.content && dayData.content.length > 0 ? (
+                                  <div className="space-y-4">
+                                    {dayData.content.map((section, si) => (
+                                      <div key={si}>
+                                        <h5 className="mb-1.5 text-sm font-bold text-slate-800 dark:text-slate-200">{section.heading}</h5>
+                                        {section.intro && (
+                                          <p className="mb-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{section.intro}</p>
+                                        )}
+                                        {section.points && section.points.length > 0 && (
+                                          <ul className="space-y-1.5">
+                                            {section.points.map((pt, pi) => (
+                                              <li key={pi} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+                                                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
+                                                <span>
+                                                  <span className="font-semibold text-slate-800 dark:text-slate-200">{pt.bold} </span>
+                                                  {pt.text}
+                                                </span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-slate-400 dark:text-slate-500 italic">No lesson notes added for this day yet.</p>
+                                )}
+                              </div>
+
+                              {/* Tasks */}
                               {dayData.tasks && dayData.tasks.length > 0 && (
-                                <div className="border-t border-slate-200 dark:border-white/10 pt-4">
-                                  <h4 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks</h4>
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <ListChecks className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Tasks</h4>
+                                  </div>
                                   <ul className="space-y-2">
                                     {dayData.tasks.map((task, ti) => (
-                                      <li key={ti} className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
-                                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400 dark:bg-slate-600" />
+                                      <li key={ti} className="flex items-center gap-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/5 px-3.5 py-2.5 text-sm text-slate-600 dark:text-slate-400">
+                                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400 dark:bg-slate-500" />
                                         {task.label}
                                       </li>
                                     ))}
                                   </ul>
                                 </div>
                               )}
+
+                              {/* Learning Resources */}
+                              {dayData.resourceLinks && dayData.resourceLinks.length > 0 && (
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <BookOpen className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Learning Resources</h4>
+                                  </div>
+                                  <div className="space-y-4">
+                                    {dayData.resourceLinks.map((link, idx) => {
+                                      const getYouTubeId = (url) => {
+                                        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+                                        const match = url.match(regExp);
+                                        return match && match[2].length === 11 ? match[2] : null;
+                                      };
+                                      const videoId = getYouTubeId(link.url);
+                                      if (videoId) {
+                                        return (
+                                          <div key={idx} className="space-y-2">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{link.title}</span>
+                                              <a href={link.url} target="_blank" rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-500">
+                                                <ExternalLink className="h-3 w-3" /> Open in YouTube
+                                              </a>
+                                            </div>
+                                            <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 shadow-lg"
+                                              style={{ paddingBottom: '56.25%' }}>
+                                              <iframe
+                                                className="absolute left-0 top-0 h-full w-full"
+                                                src={`https://www.youtube.com/embed/${videoId}`}
+                                                title={link.title}
+                                                frameBorder="0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                allowFullScreen
+                                              />
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                      return (
+                                        <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer"
+                                          className="group flex items-center gap-3 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/5 p-4 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                                            <ExternalLink className="h-5 w-5" />
+                                          </div>
+                                          <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{link.title}</span>
+                                          <ExternalLink className="h-4 w-4 text-slate-400 dark:text-slate-600 group-hover:text-cyan-600 transition-colors" />
+                                        </a>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Coding Task */}
+                              {dayData.codingTask && (
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Code2 className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Coding Task</h4>
+                                  </div>
+                                  <p className="rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950/50 p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-mono">
+                                    {dayData.codingTask}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Assignment */}
+                              {dayData.assignment && (
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Assignment</h4>
+                                  </div>
+                                  <p className="rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950/50 p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                                    {dayData.assignment}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Hands-on Practice */}
+                              {dayData.handsOn && dayData.handsOn.length > 0 && (
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Lightbulb className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Hands-on Practice</h4>
+                                  </div>
+                                  <ul className="space-y-2 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950/50 p-4">
+                                    {dayData.handsOn.map((item, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-cyan-500" />
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {/* Why This Matters */}
+                              {dayData.explanation && (
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-5">
+                                  <div className="rounded-xl border border-cyan-200 dark:border-cyan-500/20 bg-gradient-to-br from-cyan-50 dark:from-cyan-950/30 to-slate-50 dark:to-slate-900/50 p-5">
+                                    <h4 className="mb-2 text-sm font-bold text-cyan-700 dark:text-cyan-400">Why This Matters</h4>
+                                    <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{dayData.explanation}</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Evaluation Checklist */}
+                              {dayData.evaluationChecklist && dayData.evaluationChecklist.length > 0 && (
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Evaluation Checklist</h4>
+                                  </div>
+                                  <ul className="space-y-2">
+                                    {dayData.evaluationChecklist.map((item, idx) => (
+                                      <li key={idx} className="flex items-start gap-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/5 px-3.5 py-2.5 text-sm text-slate-600 dark:text-slate-400">
+                                        <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {/* Git Task */}
+                              {dayData.gitTask && (
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <GitBranch className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Git Task</h4>
+                                  </div>
+                                  <p className="font-mono rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-950/50 p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                                    {dayData.gitTask}
+                                  </p>
+                                </div>
+                              )}
+
                             </div>
                           )}
                         </div>
