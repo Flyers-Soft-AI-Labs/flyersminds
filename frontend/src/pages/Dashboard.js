@@ -845,6 +845,19 @@ function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDay
                               ) : (
                                 <p className="text-sm text-slate-400 dark:text-slate-500 italic">No lesson notes added for this day yet.</p>
                               )}
+                              {dayData.tasks && dayData.tasks.length > 0 && (
+                                <div className="border-t border-slate-200 dark:border-white/10 pt-4">
+                                  <h4 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Tasks</h4>
+                                  <ul className="space-y-2">
+                                    {dayData.tasks.map((task, ti) => (
+                                      <li key={ti} className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
+                                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400 dark:bg-slate-600" />
+                                        {task.label}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
