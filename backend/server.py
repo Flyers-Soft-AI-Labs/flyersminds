@@ -207,6 +207,15 @@ class CodeExecuteRequest(BaseModel):
     code: str
 
 
+class QuizCodingAnswer(BaseModel):
+    question_id: int
+    actual_output: str
+    expected_output: str
+
+class QuizGradeRequest(BaseModel):
+    answers: List[QuizCodingAnswer]
+
+
 class CodeSnippetSave(BaseModel):
     day_number: int
     snippet_id: str
@@ -969,6 +978,41 @@ async def execute_code(data: CodeExecuteRequest):
         raise HTTPException(status_code=504, detail="Code execution timed out")
     except httpx.RequestError as exc:
         raise HTTPException(status_code=502, detail=f"Failed to reach execution server: {exc}")
+
+
+@api_router.post("/quiz/grade")
+async def grade_quiz_coding(data: QuizGradeRequest):
+    """Grade coding quiz answers by comparing output with expected using Ollama."""
+    from ollama import chat as ollama_chat
+
+    results = []
+    for answer in data.answers:
+        if not answer.actual_output.strip():
+            results.append({"question_id": answer.question_id, "correct": False})
+            continue
+
+        prompt = (
+            "You are grading a programming exercise. Compare the student's actual output "
+            "with the expected output.\n\n"
+            f"Expected output:\n{answer.expected_output}\n\n"
+            f"Student's actual output:\n{answer.actual_output}\n\n"
+            "Are these outputs equivalent (ignoring minor whitespace or formatting differences)? "
+            "Respond with exactly one word: CORRECT or INCORRECT."
+        )
+
+        try:
+            response = ollama_chat(
+                model='minimax-m2.7:cloud',
+                messages=[{'role': 'user', 'content': prompt}],
+            )
+            verdict = response.message.content.strip().upper()
+            correct = 'CORRECT' in verdict
+        except Exception:
+            correct = False
+
+        results.append({"question_id": answer.question_id, "correct": correct})
+
+    return {"results": results}
 
 
 @api_router.get("/health")

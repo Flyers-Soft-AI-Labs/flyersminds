@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   BookOpen,
   Code2,
+  Loader2,
 } from 'lucide-react';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
@@ -260,15 +261,15 @@ export default function QuizPage() {
   );
   const [outputs, setOutputs] = useState({});
   const [running, setRunning] = useState({});
-  const [phase, setPhase] = useState('quiz'); // 'quiz' | 'score'
-  const [codingMarks, setCodingMarks] = useState({});
+  const [phase, setPhase] = useState('quiz'); // 'quiz' | 'score' | 'grading'
+  const [gradingResults, setGradingResults] = useState({});
 
   const question = QUIZ_QUESTIONS[currentQ];
   const totalQ = QUIZ_QUESTIONS.length;
   const mcqQuestions = QUIZ_QUESTIONS.filter((q) => q.type === 'mcq');
   const codingQuestions = QUIZ_QUESTIONS.filter((q) => q.type === 'coding');
   const mcqScore = mcqQuestions.filter((q) => mcqAnswers[q.id] === q.correctIndex).length;
-  const codingScore = Object.values(codingMarks).filter(Boolean).length * 4;
+  const codingScore = Object.values(gradingResults).filter(Boolean).length * 4;
   const totalScore = mcqScore + codingScore;
   const maxScore = 35;
 
@@ -291,6 +292,35 @@ export default function QuizPage() {
     }
   };
 
+  const handleSubmit = async () => {
+    setPhase('grading');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    const answers = codingQuestions.map((q) => ({
+      question_id: q.id,
+      actual_output: outputs[q.id]?.stdout?.trim() || '',
+      expected_output: q.exampleOutput,
+    }));
+
+    try {
+      const res = await fetch(`${API}/quiz/grade`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers }),
+      });
+      const data = await res.json();
+      const map = {};
+      data.results.forEach((r) => { map[r.question_id] = r.correct; });
+      setGradingResults(map);
+    } catch {
+      const fallback = {};
+      codingQuestions.forEach((q) => { fallback[q.id] = false; });
+      setGradingResults(fallback);
+    }
+
+    setPhase('score');
+  };
+
   const handleRetake = () => {
     setCurrentQ(0);
     setMcqAnswers({});
@@ -301,7 +331,7 @@ export default function QuizPage() {
     );
     setOutputs({});
     setRunning({});
-    setCodingMarks({});
+    setGradingResults({});
     setPhase('quiz');
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
@@ -315,6 +345,19 @@ export default function QuizPage() {
     if (currentQ === 0) navigate('/dashboard');
     else { setCurrentQ((c) => c - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   };
+
+  // ── Grading Screen ────────────────────────────────────────────
+  if (phase === 'grading') {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center px-4">
+          <Loader2 className="h-12 w-12 animate-spin text-cyan-500 mx-auto mb-4" />
+          <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white mb-2">Grading your answers…</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">AI is checking your coding submissions. This may take a few seconds.</p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Score Screen ─────────────────────────────────────────────
   if (phase === 'score') {
@@ -390,49 +433,44 @@ export default function QuizPage() {
             </div>
           </div>
 
-          {/* Coding Self-Assessment */}
+          {/* Coding Results */}
           <div className="mb-8 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 p-6">
-            <h2 className="font-heading text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+            <h2 className="font-heading text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <Code2 className="h-5 w-5 text-cyan-500" />
-              Coding Self-Assessment
+              Coding Results
               <span className="ml-auto text-sm font-semibold text-slate-500">{codingScore} / 20</span>
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
-              Compare your output with the expected output and mark each question as correct or incorrect.
-            </p>
             <div className="space-y-5">
               {codingQuestions.map((q) => {
                 const output = outputs[q.id];
-                const marked = codingMarks[q.id];
+                const correct = gradingResults[q.id];
                 return (
-                  <div key={q.id} className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+                  <div
+                    key={q.id}
+                    className={`overflow-hidden rounded-xl border ${
+                      correct ? 'border-green-500/30' : 'border-red-500/20'
+                    }`}
+                  >
                     {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-50 dark:bg-slate-900/50 px-4 py-3">
+                    <div className={`flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 ${
+                      correct ? 'bg-green-50 dark:bg-green-950/20' : 'bg-red-50 dark:bg-red-950/10'
+                    }`}>
                       <div className="flex-1 min-w-0">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{q.topic}</span>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{q.title}</p>
                       </div>
-                      <div className="flex gap-2 shrink-0">
-                        <button
-                          onClick={() => setCodingMarks((prev) => ({ ...prev, [q.id]: true }))}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                            marked === true
-                              ? 'bg-green-500 text-white shadow-md shadow-green-500/30'
-                              : 'border border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/10'
-                          }`}
-                        >
-                          ✓ Got it (+4)
-                        </button>
-                        <button
-                          onClick={() => setCodingMarks((prev) => ({ ...prev, [q.id]: false }))}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                            marked === false
-                              ? 'bg-red-500 text-white shadow-md shadow-red-500/30'
-                              : 'border border-red-500/30 text-red-500 hover:bg-red-500/10'
-                          }`}
-                        >
-                          ✗ Not quite
-                        </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {correct ? (
+                          <>
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            <span className="text-sm font-bold text-green-600 dark:text-green-400">+4 marks</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-5 w-5 text-red-500" />
+                            <span className="text-sm font-bold text-red-500">0 / 4</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     {/* Output comparison */}
@@ -696,7 +734,7 @@ export default function QuizPage() {
             </button>
           ) : (
             <button
-              onClick={() => { setPhase('score'); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+              onClick={handleSubmit}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:from-purple-500 hover:to-indigo-500 transition-all shadow-md shadow-purple-500/20"
             >
               <Trophy className="h-4 w-4" /> Submit Quiz
