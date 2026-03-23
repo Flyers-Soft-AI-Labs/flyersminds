@@ -268,8 +268,8 @@ export default function QuizPage() {
   const totalQ = QUIZ_QUESTIONS.length;
   const mcqQuestions = QUIZ_QUESTIONS.filter((q) => q.type === 'mcq');
   const codingQuestions = QUIZ_QUESTIONS.filter((q) => q.type === 'coding');
-  const mcqScore = mcqQuestions.filter((q) => mcqAnswers[q.id] === q.correctIndex).length;
-  const codingScore = Object.values(gradingResults).filter(Boolean).length * 4;
+  const mcqScore = mcqQuestions.filter((q) => gradingResults[q.id] === true).length;
+  const codingScore = codingQuestions.filter((q) => gradingResults[q.id] === true).length * 4;
   const totalScore = mcqScore + codingScore;
   const maxScore = 35;
 
@@ -296,7 +296,14 @@ export default function QuizPage() {
     setPhase('grading');
     window.scrollTo({ top: 0, behavior: 'instant' });
 
-    const answers = codingQuestions.map((q) => ({
+    const mcq_answers = mcqQuestions.map((q) => ({
+      question_id: q.id,
+      question: q.question,
+      options: q.options,
+      selected_index: mcqAnswers[q.id] !== undefined ? mcqAnswers[q.id] : -1,
+    }));
+
+    const coding_answers = codingQuestions.map((q) => ({
       question_id: q.id,
       actual_output: outputs[q.id]?.stdout?.trim() || '',
       expected_output: q.exampleOutput,
@@ -306,7 +313,7 @@ export default function QuizPage() {
       const res = await fetch(`${API}/quiz/grade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers }),
+        body: JSON.stringify({ mcq_answers, coding_answers }),
       });
       const data = await res.json();
       const map = {};
@@ -314,7 +321,7 @@ export default function QuizPage() {
       setGradingResults(map);
     } catch {
       const fallback = {};
-      codingQuestions.forEach((q) => { fallback[q.id] = false; });
+      [...mcqQuestions, ...codingQuestions].forEach((q) => { fallback[q.id] = false; });
       setGradingResults(fallback);
     }
 
@@ -353,7 +360,7 @@ export default function QuizPage() {
         <div className="text-center px-4">
           <Loader2 className="h-12 w-12 animate-spin text-cyan-500 mx-auto mb-4" />
           <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white mb-2">Grading your answers…</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">AI is checking your coding submissions. This may take a few seconds.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">AI is checking all 20 questions in parallel. This may take a few seconds.</p>
         </div>
       </div>
     );
@@ -394,7 +401,7 @@ export default function QuizPage() {
               {mcqQuestions.map((q, idx) => {
                 const userAnswer = mcqAnswers[q.id];
                 const answered = userAnswer !== undefined;
-                const isCorrect = answered && userAnswer === q.correctIndex;
+                const isCorrect = gradingResults[q.id] === true;
                 return (
                   <div
                     key={q.id}

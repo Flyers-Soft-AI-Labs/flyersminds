@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 import httpx
+import asyncio
 from groq import AsyncGroq
 
 ROOT_DIR = Path(__file__).parent
@@ -207,13 +208,20 @@ class CodeExecuteRequest(BaseModel):
     code: str
 
 
+class QuizMCQAnswer(BaseModel):
+    question_id: int
+    question: str
+    options: List[str]
+    selected_index: int  # -1 if not answered
+
 class QuizCodingAnswer(BaseModel):
     question_id: int
     actual_output: str
     expected_output: str
 
 class QuizGradeRequest(BaseModel):
-    answers: List[QuizCodingAnswer]
+    mcq_answers: List[QuizMCQAnswer]
+    coding_answers: List[QuizCodingAnswer]
 
 
 class CodeSnippetSave(BaseModel):
@@ -981,38 +989,62 @@ async def execute_code(data: CodeExecuteRequest):
 
 
 @api_router.post("/quiz/grade")
-async def grade_quiz_coding(data: QuizGradeRequest):
-    """Grade coding quiz answers by comparing output with expected using Ollama."""
+async def grade_quiz(data: QuizGradeRequest):
+    """Grade all quiz answers (MCQ + coding) using Ollama minimax-m2.7:cloud in parallel."""
     from ollama import chat as ollama_chat
+    LABELS = ['A', 'B', 'C', 'D']
 
-    results = []
-    for answer in data.answers:
-        if not answer.actual_output.strip():
-            results.append({"question_id": answer.question_id, "correct": False})
-            continue
-
-        prompt = (
-            "You are grading a programming exercise. Compare the student's actual output "
-            "with the expected output.\n\n"
-            f"Expected output:\n{answer.expected_output}\n\n"
-            f"Student's actual output:\n{answer.actual_output}\n\n"
-            "Are these outputs equivalent (ignoring minor whitespace or formatting differences)? "
-            "Respond with exactly one word: CORRECT or INCORRECT."
-        )
-
-        try:
-            response = ollama_chat(
+    async def grade_one(prompt: str) -> bool:
+        def _call():
+            r = ollama_chat(
                 model='minimax-m2.7:cloud',
                 messages=[{'role': 'user', 'content': prompt}],
             )
-            verdict = response.message.content.strip().upper()
-            correct = 'CORRECT' in verdict
+            return 'CORRECT' in r.message.content.strip().upper()
+        try:
+            return await asyncio.to_thread(_call)
         except Exception:
-            correct = False
+            return False
 
-        results.append({"question_id": answer.question_id, "correct": correct})
+    async def grade_item(question_id: int, prompt):
+        if prompt is None:
+            return question_id, False
+        correct = await grade_one(prompt)
+        return question_id, correct
 
-    return {"results": results}
+    items = []  # (question_id, prompt | None)
+
+    for a in data.mcq_answers:
+        if a.selected_index < 0 or a.selected_index >= len(a.options):
+            items.append((a.question_id, None))
+        else:
+            opts = '\n'.join(f"{LABELS[i]}. {o}" for i, o in enumerate(a.options))
+            selected = f"{LABELS[a.selected_index]}. {a.options[a.selected_index]}"
+            prompt = (
+                f"You are grading a multiple choice question.\n\n"
+                f"Question: {a.question}\n\n"
+                f"Options:\n{opts}\n\n"
+                f"The student selected: {selected}\n\n"
+                f"Is this the correct answer? Respond with exactly one word: CORRECT or INCORRECT."
+            )
+            items.append((a.question_id, prompt))
+
+    for a in data.coding_answers:
+        if not a.actual_output.strip():
+            items.append((a.question_id, None))
+        else:
+            prompt = (
+                f"You are grading a programming exercise. Compare the student's actual output "
+                f"with the expected output.\n\n"
+                f"Expected output:\n{a.expected_output}\n\n"
+                f"Student's actual output:\n{a.actual_output}\n\n"
+                f"Are these outputs equivalent (ignoring minor whitespace or formatting differences)? "
+                f"Respond with exactly one word: CORRECT or INCORRECT."
+            )
+            items.append((a.question_id, prompt))
+
+    results = await asyncio.gather(*[grade_item(qid, prompt) for qid, prompt in items])
+    return {"results": [{"question_id": qid, "correct": correct} for qid, correct in results]}
 
 
 @api_router.get("/health")
