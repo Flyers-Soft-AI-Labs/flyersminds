@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
 import Navbar from '../components/Navbar';
+import MultiCodeEditor from '../components/MultiCodeEditor';
 import { months, curriculum } from '../data/curriculum';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
@@ -937,6 +938,16 @@ function CurriculumTabs({ months, curriculum, activeMonth, setActiveMonth, isDay
                                   </p>
                                 </div>
                               )}
+
+                              {/* In-Browser IDE */}
+                              <div className="border-t border-slate-200 dark:border-white/10 pt-5 space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Code2 className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Try It Here</h4>
+                                  <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">Powered by Wandbox</span>
+                                </div>
+                                <MultiCodeEditor dayNumber={dayNum} />
+                              </div>
 
                               {/* Assignment */}
                               {dayData.assignment && (
