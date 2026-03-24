@@ -218,6 +218,9 @@ class QuizCodingAnswer(BaseModel):
     question_id: int
     actual_output: str
     expected_output: str
+    code: str = ""
+    runnable: bool = True
+    task_description: str = ""
 
 class QuizGradeRequest(BaseModel):
     mcq_answers: List[QuizMCQAnswer]
@@ -1030,7 +1033,21 @@ async def grade_quiz(data: QuizGradeRequest, user=Depends(get_current_user)):
             items.append((a.question_id, prompt))
 
     for a in data.coding_answers:
-        if not a.actual_output.strip():
+        if not a.runnable:
+            # Cannot be executed in sandbox — review the code directly
+            if not a.code.strip() or a.code.strip() == a.task_description:
+                items.append((a.question_id, None))
+            else:
+                prompt = (
+                    f"You are grading a programming exercise. Review the student's code.\n\n"
+                    f"Task: {a.task_description}\n\n"
+                    f"Expected behaviour:\n{a.expected_output}\n\n"
+                    f"Student's code:\n{a.code}\n\n"
+                    f"Does the student's code correctly implement the required functionality? "
+                    f"Respond with exactly one word: CORRECT or INCORRECT."
+                )
+                items.append((a.question_id, prompt))
+        elif not a.actual_output.strip():
             items.append((a.question_id, None))
         else:
             prompt = (

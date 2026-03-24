@@ -160,7 +160,7 @@ const QUIZ_QUESTIONS = [
 print(analyze_numbers([4, 7, 2, 9, 1]))`,
   },
   {
-    id: 17, type: 'coding', section: 2, topic: 'FastAPI', marks: 4,
+    id: 17, type: 'coding', section: 2, topic: 'FastAPI', marks: 4, runnable: false,
     title: 'User Profile Endpoint',
     question:
       "Create a FastAPI application with a GET endpoint at /user/{user_id} that returns a JSON response containing the user_id, a name field (any placeholder string), and an is_active field set to True.",
@@ -201,7 +201,7 @@ print(matrix)
 print("Mean:", mean_val)`,
   },
   {
-    id: 19, type: 'coding', section: 2, topic: 'Deep Learning', marks: 4,
+    id: 19, type: 'coding', section: 2, topic: 'Deep Learning', marks: 4, runnable: false,
     title: 'Build a Simple Neural Network',
     question:
       'Using Keras (TensorFlow), build a simple Sequential model with: (1) an input Dense layer of 64 neurons with ReLU activation, (2) a hidden Dense layer of 32 neurons with ReLU activation, and (3) an output Dense layer of 1 neuron (for binary classification). Print the model summary.',
@@ -307,6 +307,9 @@ export default function QuizPage() {
       question_id: q.id,
       actual_output: outputs[q.id]?.stdout?.trim() || '',
       expected_output: q.exampleOutput,
+      code: codes[q.id] || '',
+      runnable: q.runnable !== false,
+      task_description: q.question,
     }));
 
     try {
@@ -639,8 +642,8 @@ export default function QuizPage() {
                 {/* Toolbar */}
                 <div className="flex items-center justify-between border-b border-white/10 bg-[#2d2d2d] px-4 py-2.5">
                   <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-                    <span className="h-2 w-2 rounded-full bg-cyan-400" />
-                    Python 3
+                    <span className={`h-2 w-2 rounded-full ${question.runnable === false ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                    {question.topic}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -650,18 +653,25 @@ export default function QuizPage() {
                     >
                       <RotateCcw className="h-3.5 w-3.5" /> Reset
                     </button>
-                    <button
-                      onClick={() => handleRun(question.id)}
-                      disabled={running[question.id]}
-                      className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-                    >
-                      {running[question.id] ? (
-                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      ) : (
-                        <Play className="h-3 w-3 fill-white" />
-                      )}
-                      {running[question.id] ? 'Running…' : 'Run Code'}
-                    </button>
+                    {question.runnable !== false && (
+                      <button
+                        onClick={() => handleRun(question.id)}
+                        disabled={running[question.id]}
+                        className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                      >
+                        {running[question.id] ? (
+                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        ) : (
+                          <Play className="h-3 w-3 fill-white" />
+                        )}
+                        {running[question.id] ? 'Running…' : 'Run Code'}
+                      </button>
+                    )}
+                    {question.runnable === false && (
+                      <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400">
+                        AI Reviewed
+                      </span>
+                    )}
                   </div>
                 </div>
 
