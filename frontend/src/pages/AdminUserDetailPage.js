@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/badge';
 import {
   ArrowLeft, KeyRound, ChevronDown, ChevronUp, CheckCircle2,
   Circle, Github, Code2, Eye, EyeOff, User, Calendar, Layers,
+  Trophy, BookOpen,
 } from 'lucide-react';
 
 const LANG_COLORS = {
@@ -28,6 +29,7 @@ export default function AdminUserDetailPage() {
   const [userData, setUserData] = useState(null);
   const [progress, setProgress] = useState([]);
   const [snippets, setSnippets] = useState([]);
+  const [quizAttempts, setQuizAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Change password modal
@@ -48,17 +50,21 @@ export default function AdminUserDetailPage() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [progRes, snipRes] = await Promise.all([
+      const [progRes, snipRes, quizRes] = await Promise.all([
         axios.get(`${API}/admin/users/${userId}/progress`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`${API}/admin/users/${userId}/snippets`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
+        axios.get(`${API}/admin/users/${userId}/quiz`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => ({ data: [] })),
       ]);
       setUserData(progRes.data.user);
       setProgress(progRes.data.progress || []);
       setSnippets(snipRes.data || []);
+      setQuizAttempts(quizRes.data || []);
     } catch (err) {
       toast.error('Failed to load user details');
       navigate('/admin');
@@ -288,6 +294,78 @@ export default function AdminUserDetailPage() {
                     </div>
                   </div>
                 ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Quiz Results ── */}
+        {quizAttempts.length > 0 && (
+          <div className="mb-8">
+            <h2 className="mb-4 font-heading text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-purple-400" />
+              Quiz Attempts ({quizAttempts.length})
+            </h2>
+            <div className="space-y-3">
+              {quizAttempts.map((attempt, idx) => {
+                const pct = attempt.percentage ?? 0;
+                const gradeColor = pct >= 80 ? 'text-green-500' : pct >= 60 ? 'text-cyan-500' : pct >= 40 ? 'text-amber-500' : 'text-red-500';
+                const gradeBg = pct >= 80 ? 'bg-green-500/10 border-green-500/20' : pct >= 60 ? 'bg-cyan-500/10 border-cyan-500/20' : pct >= 40 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20';
+                const gradeLabel = pct >= 80 ? 'Excellent' : pct >= 60 ? 'Good' : pct >= 40 ? 'Keep Practicing' : 'Needs Work';
+                return (
+                  <div key={idx} className={`overflow-hidden rounded-xl border ${gradeBg} p-5`}>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs font-bold uppercase tracking-wider ${gradeColor}`}>{gradeLabel}</span>
+                          {idx === 0 && <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold text-purple-400">Latest</span>}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-6 text-center">
+                        <div>
+                          <p className={`text-2xl font-bold ${gradeColor}`}>{attempt.total_score}<span className="text-sm text-slate-400 font-normal">/{attempt.max_score}</span></p>
+                          <p className="text-[11px] text-slate-500">Total</p>
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-slate-700 dark:text-slate-300">{attempt.mcq_score}<span className="text-sm text-slate-400 font-normal">/15</span></p>
+                          <p className="text-[11px] text-slate-500">MCQ</p>
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-slate-700 dark:text-slate-300">{attempt.coding_score}<span className="text-sm text-slate-400 font-normal">/20</span></p>
+                          <p className="text-[11px] text-slate-500">Coding</p>
+                        </div>
+                        <div>
+                          <p className={`text-lg font-bold ${gradeColor}`}>{pct}%</p>
+                          <p className="text-[11px] text-slate-500">Score</p>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Per-question breakdown */}
+                    {attempt.results && (
+                      <div className="mt-4 pt-4 border-t border-white/10">
+                        <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                          <BookOpen className="h-3 w-3" /> Question Breakdown
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {attempt.results.map((r) => (
+                            <span
+                              key={r.question_id}
+                              title={`Q${r.question_id}: ${r.correct ? 'Correct' : 'Incorrect'}`}
+                              className={`flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold ${
+                                r.correct ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                              }`}
+                            >
+                              {r.question_id}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

@@ -989,7 +989,7 @@ async def execute_code(data: CodeExecuteRequest):
 
 
 @api_router.post("/quiz/grade")
-async def grade_quiz(data: QuizGradeRequest):
+async def grade_quiz(data: QuizGradeRequest, user=Depends(get_current_user)):
     """Grade all quiz answers (MCQ + coding) using Ollama minimax-m2.7:cloud in parallel."""
     from ollama import chat as ollama_chat
     LABELS = ['A', 'B', 'C', 'D']
@@ -1044,7 +1044,37 @@ async def grade_quiz(data: QuizGradeRequest):
             items.append((a.question_id, prompt))
 
     results = await asyncio.gather(*[grade_item(qid, prompt) for qid, prompt in items])
-    return {"results": [{"question_id": qid, "correct": correct} for qid, correct in results]}
+    graded = [{"question_id": qid, "correct": correct} for qid, correct in results]
+
+    # Calculate scores: Q1-15 = MCQ (1 mark each), Q16-20 = coding (4 marks each)
+    mcq_score = sum(1 for r in graded if r["question_id"] <= 15 and r["correct"])
+    coding_score = sum(4 for r in graded if r["question_id"] > 15 and r["correct"])
+    total_score = mcq_score + coding_score
+
+    # Save result to DB
+    await db.quiz_results.insert_one({
+        "user_id": user["id"],
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
+        "total_score": total_score,
+        "max_score": 35,
+        "mcq_score": mcq_score,
+        "coding_score": coding_score,
+        "percentage": round((total_score / 35) * 100),
+        "results": graded,
+    })
+
+    return {"results": graded}
+
+
+@api_router.get("/admin/users/{user_id}/quiz")
+async def get_user_quiz_results(user_id: str, user=Depends(get_current_user)):
+    """Get all quiz attempts for a user (admin only)."""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    attempts = await db.quiz_results.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).sort("submitted_at", -1).to_list(50)
+    return attempts
 
 
 @api_router.get("/health")

@@ -249,7 +249,7 @@ function getGrade(score, max) {
 }
 
 export default function QuizPage() {
-  const { API } = useAuth();
+  const { API, token } = useAuth();
   const navigate = useNavigate();
 
   const [currentQ, setCurrentQ] = useState(0);
@@ -312,7 +312,7 @@ export default function QuizPage() {
     try {
       const res = await fetch(`${API}/quiz/grade`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ mcq_answers, coding_answers }),
       });
       const data = await res.json();
