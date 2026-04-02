@@ -75,7 +75,7 @@ export default function LandingPage() {
   const handleCourseClick = (course) => {
     if (!course.active) { toast.info('Coming soon! Stay tuned.'); return; }
     if (token) navigate('/dashboard');
-    else { setPendingCourse(course.id); setModalTab('register'); setAuthError(''); setShowModal(true); }
+    else navigate(`/enroll/${course.id}`);
   };
 
   const handleLogin = async (e) => {

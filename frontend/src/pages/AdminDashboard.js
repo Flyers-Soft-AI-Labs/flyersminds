@@ -11,7 +11,7 @@ import { Separator } from '../components/ui/separator';
 import {
   Users, ChevronDown, ChevronUp, Search, Calendar, TrendingUp, Sparkles,
   FileText, BookOpen, ChevronLeft, Brain, Code2, Database, Cloud, ArrowRight,
-  GraduationCap, Briefcase, Layers, ExternalLink, Github,
+  GraduationCap, Briefcase, Layers, ExternalLink, Github, Inbox,
 } from 'lucide-react';
 import { Input } from '../components/ui/input';
 
@@ -253,6 +253,9 @@ export default function AdminDashboard() {
                   <ChevronLeft className="h-4 w-4" /> Back to Categories
                 </button>
               )}
+              <button onClick={() => navigate('/admin/enrollments')} className="inline-flex items-center gap-2 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
+                <Inbox className="h-4 w-4" /> Enrollments
+              </button>
               <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors">
                 <BookOpen className="h-4 w-4" /> Browse Course
               </button>

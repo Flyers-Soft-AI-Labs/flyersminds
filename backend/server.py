@@ -238,6 +238,15 @@ class AdminPasswordChange(BaseModel):
     new_password: str
 
 
+class EnrollmentCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: str
+    course: Optional[str] = 'aiml'
+    message: Optional[str] = None
+
+
 # Compiler cache populated lazily on first execution request
 _wandbox_compiler_map: dict = {}
 
@@ -317,35 +326,49 @@ def create_reset_token(email: str) -> str:
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
-async def send_email(to_email: str, subject: str, html_content: str):
-    """Send email via Brevo API"""
+def create_course_access_token(enrollment_id: str, email: str, course: str) -> str:
+    payload = {
+        "purpose": "course_access",
+        "enrollment_id": enrollment_id,
+        "email": email,
+        "course": course,
+        "exp": datetime.now(timezone.utc) + timedelta(days=7)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+async def send_email(to_email: str, subject: str, html_content: str) -> bool:
+    """Send email via Brevo SMTP API. Returns True on success, raises on hard failure."""
     if not BREVO_API_KEY or not BREVO_SENDER_EMAIL:
-        print("WARNING: BREVO_API_KEY or BREVO_SENDER_EMAIL not set in .env — email not sent.")
+        logger.error("BREVO_API_KEY or BREVO_SENDER_EMAIL not set — email not sent.")
         return False
     try:
-        async with httpx.AsyncClient() as http_client:
+        async with httpx.AsyncClient(timeout=20) as http_client:
             response = await http_client.post(
                 "https://api.brevo.com/v3/smtp/email",
                 headers={
                     "api-key": BREVO_API_KEY,
                     "Content-Type": "application/json",
+                    "accept": "application/json",
                 },
                 json={
                     "sender": {"name": FROM_NAME, "email": BREVO_SENDER_EMAIL},
-                    "to": [{"email": to_email}],
+                    "to": [{"email": to_email, "name": to_email}],
                     "subject": subject,
                     "htmlContent": html_content,
                 },
-                timeout=15,
             )
         if response.status_code in (200, 201):
-            print(f"Email sent to {to_email}")
+            logger.info(f"Email sent successfully to {to_email} (status {response.status_code})")
             return True
         else:
-            print(f"Brevo error {response.status_code}: {response.text}")
+            logger.error(f"Brevo API error {response.status_code}: {response.text}")
             return False
+    except httpx.TimeoutException:
+        logger.error(f"Brevo API timed out sending to {to_email}")
+        return False
     except Exception as e:
-        print(f"Error sending email: {str(e)}")
+        logger.error(f"Unexpected error sending email to {to_email}: {e}")
         return False
 
 
@@ -1092,6 +1115,237 @@ async def get_user_quiz_results(user_id: str, user=Depends(get_current_user)):
         {"user_id": user_id}, {"_id": 0}
     ).sort("submitted_at", -1).to_list(50)
     return attempts
+
+
+@api_router.post("/enrollments")
+async def create_enrollment(data: EnrollmentCreate):
+    """Submit a course enrollment request (no auth required)."""
+    email = data.email.lower().strip()
+    course = data.course or 'aiml'
+
+    existing = await db.enrollments.find_one({
+        "email": email,
+        "course": course,
+        "status": {"$in": ["pending", "accepted"]}
+    })
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="An enrollment request for this course already exists for this email address."
+        )
+
+    enrollment_id = str(uuid.uuid4())
+    doc = {
+        "id": enrollment_id,
+        "first_name": data.first_name.strip(),
+        "last_name": data.last_name.strip(),
+        "email": email,
+        "phone": data.phone.strip(),
+        "course": course,
+        "message": data.message.strip() if data.message else None,
+        "status": "pending",
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.enrollments.insert_one(doc)
+    return {"message": "Enrollment submitted successfully. You will receive an email once approved.", "id": enrollment_id}
+
+
+@api_router.get("/admin/enrollments")
+async def get_all_enrollments(user=Depends(get_current_user)):
+    """List all enrollment requests (admin only)."""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    enrollments = await db.enrollments.find({}, {"_id": 0}).sort("submitted_at", -1).to_list(1000)
+    return enrollments
+
+
+@api_router.get("/admin/enrollments/{enrollment_id}")
+async def get_enrollment(enrollment_id: str, user=Depends(get_current_user)):
+    """Get a single enrollment (admin only)."""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    return enrollment
+
+
+@api_router.post("/admin/enrollments/{enrollment_id}/accept")
+async def accept_enrollment(enrollment_id: str, user=Depends(get_current_user)):
+    """Accept an enrollment and send the access email (admin only)."""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    if enrollment.get("status") == "accepted":
+        raise HTTPException(status_code=400, detail="Enrollment has already been accepted")
+
+    access_token = create_course_access_token(enrollment_id, enrollment["email"], enrollment.get("course", "aiml"))
+    access_expires_at = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+
+    await db.enrollments.update_one(
+        {"id": enrollment_id},
+        {"$set": {
+            "status": "accepted",
+            "accepted_at": datetime.now(timezone.utc).isoformat(),
+            "access_token": access_token,
+            "access_expires_at": access_expires_at,
+        }}
+    )
+
+    name = f"{enrollment['first_name']} {enrollment['last_name']}"
+    course_id = enrollment.get("course", "aiml")
+    course_names = {
+        "aiml": "AI / ML Engineering (120-Day Intensive)",
+        "webdev": "Full Stack Web Development",
+        "datascience": "Data Science",
+        "cloud": "Cloud & DevOps",
+    }
+    course_name = course_names.get(course_id, course_id.upper())
+    access_link = f"{FRONTEND_URL}/course-access/{access_token}"
+
+    html_content = f"""
+    <html>
+      <body style="margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:40px 20px;">
+          <tr><td align="center">
+            <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+
+              <!-- Header gradient -->
+              <tr>
+                <td style="background:linear-gradient(135deg,#0ea5e9 0%,#6366f1 100%);padding:36px 40px;text-align:center;">
+                  <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.65);">Flyers Minds · Chennai, India</p>
+                  <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">Enrollment Accepted!</h1>
+                  <p style="margin:10px 0 0;font-size:14px;color:rgba(255,255,255,0.8);">Your journey starts now, {enrollment['first_name']}.</p>
+                </td>
+              </tr>
+
+              <!-- Body -->
+              <tr>
+                <td style="padding:36px 40px;">
+                  <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.6;">
+                    Hi <strong>{name}</strong>,
+                  </p>
+                  <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+                    Great news — your enrollment request for <strong>{course_name}</strong> has been reviewed and <strong style="color:#0ea5e9;">accepted</strong> by our team.
+                  </p>
+                  <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.6;">
+                    Click the button below to access your course. This link is valid for <strong>7 days</strong> — make sure to start before it expires!
+                  </p>
+
+                  <!-- CTA button -->
+                  <table cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td align="center" style="padding-bottom:28px;">
+                        <a href="{access_link}"
+                           style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:12px;font-weight:700;font-size:15px;letter-spacing:0.3px;">
+                          Access My Course →
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Expiry notice -->
+                  <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:14px 18px;margin-bottom:24px;">
+                    <p style="margin:0;font-size:13px;color:#92400e;">
+                      ⏰ <strong>This link expires in 7 days.</strong> After that, you'll need to contact us for a new invitation.
+                    </p>
+                  </div>
+
+                  <!-- Fallback link -->
+                  <p style="font-size:12px;color:#94a3b8;margin:0 0 6px;">Or copy and paste this link into your browser:</p>
+                  <p style="font-size:11px;color:#64748b;word-break:break-all;margin:0 0 24px;background:#f8fafc;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;">{access_link}</p>
+
+                  <p style="font-size:13px;color:#94a3b8;margin:0;">If you didn't apply for this course, you can safely ignore this email.</p>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+                  <p style="margin:0;font-size:12px;color:#94a3b8;">© {datetime.now().year} Flyers Minds · Chennai, India</p>
+                </td>
+              </tr>
+
+            </table>
+          </td></tr>
+        </table>
+      </body>
+    </html>
+    """
+
+    email_sent = await send_email(
+        enrollment["email"],
+        f"Your Enrollment is Accepted — Access {course_name} Now",
+        html_content,
+    )
+    if not email_sent:
+        # Enrollment is already marked accepted in DB; surface the email failure clearly
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"Enrollment accepted but the confirmation email failed to send to {enrollment['email']}. "
+                "Check that BREVO_API_KEY and BREVO_SENDER_EMAIL are correct, and that the sender "
+                "domain is verified in Brevo. The access link is saved — you can resend manually."
+            ),
+        )
+    return {"message": "Enrollment accepted and access email sent successfully"}
+
+
+@api_router.get("/course-access/{token}")
+async def verify_course_access(token: str):
+    """Verify a course access magic link and return a session token."""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="access_link_expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=400, detail="invalid_access_link")
+
+    if payload.get("purpose") != "course_access":
+        raise HTTPException(status_code=400, detail="invalid_access_link")
+
+    enrollment_id = payload.get("enrollment_id")
+    email = payload.get("email", "").lower().strip()
+    course = payload.get("course", "aiml")
+
+    enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+    if not enrollment or enrollment.get("status") != "accepted":
+        raise HTTPException(status_code=400, detail="invalid_access_link")
+
+    # Create user if they don't exist yet
+    existing_user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not existing_user:
+        user_id = str(uuid.uuid4())
+        name = f"{enrollment['first_name']} {enrollment['last_name']}"
+        user_doc = {
+            "id": user_id,
+            "name": name,
+            "email": email,
+            "password_hash": hash_password(str(uuid.uuid4())),
+            "role": "intern",
+            "course": course,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.users.insert_one(user_doc)
+        user_for_response = user_doc
+    else:
+        user_id = existing_user["id"]
+        user_for_response = existing_user
+
+    # Issue a 7-day session token to match link expiry
+    session_token = create_token(user_id, "intern", expires_delta=timedelta(days=7))
+    return {
+        "token": session_token,
+        "user": {
+            "id": user_for_response["id"],
+            "name": user_for_response["name"],
+            "email": user_for_response["email"],
+            "role": "intern",
+        }
+    }
 
 
 @api_router.get("/health")
