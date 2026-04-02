@@ -36,6 +36,7 @@ export default function AdminEnrollmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     fetchEnrollment();
@@ -86,6 +87,23 @@ export default function AdminEnrollmentDetailPage() {
       }
     } finally {
       setAccepting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resending) return;
+    setResending(true);
+    try {
+      await axios.post(
+        `${API}/admin/enrollments/${enrollmentId}/resend`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(`Access email resent to ${enrollment.email}.`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to resend email.', { duration: 8000 });
+    } finally {
+      setResending(false);
     }
   };
 
@@ -248,13 +266,31 @@ export default function AdminEnrollmentDetailPage() {
               <p className="kicker mb-4"><CheckCircle2 className="h-3.5 w-3.5" />Admin Action</p>
 
               {accepted ? (
-                <div className="rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-4 text-center">
-                  <CheckCircle2 className="mx-auto h-8 w-8 text-green-500 mb-2" />
-                  <p className="font-semibold text-green-700 dark:text-green-400 text-sm mb-1">Enrollment Accepted</p>
-                  <p className="text-xs text-green-600 dark:text-green-500">
-                    An access email with a 7-day link has been sent to{' '}
-                    <strong>{enrollment.email}</strong>.
-                  </p>
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-4 text-center">
+                    <CheckCircle2 className="mx-auto h-8 w-8 text-green-500 mb-2" />
+                    <p className="font-semibold text-green-700 dark:text-green-400 text-sm mb-1">Enrollment Accepted</p>
+                    <p className="text-xs text-green-600 dark:text-green-500">
+                      An access email with a 7-day link was sent to{' '}
+                      <strong>{enrollment.email}</strong>.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleResend}
+                    disabled={resending}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 py-2.5 text-sm font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 active:scale-[0.98] transition disabled:opacity-50"
+                  >
+                    {resending ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-300 border-t-blue-600" />
+                        Resending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" /> Resend Access Email
+                      </>
+                    )}
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-4">

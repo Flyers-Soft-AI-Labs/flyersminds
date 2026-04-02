@@ -1150,6 +1150,143 @@ async def create_enrollment(data: EnrollmentCreate):
     return {"message": "Enrollment submitted successfully. You will receive an email once approved.", "id": enrollment_id}
 
 
+@api_router.post("/admin/test-email")
+async def test_brevo_email(data: dict, user=Depends(get_current_user)):
+    """Send a test email and return the raw Brevo response — for debugging only."""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    to_email = data.get("to_email", user["email"])
+
+    if not BREVO_API_KEY or not BREVO_SENDER_EMAIL:
+        raise HTTPException(status_code=500, detail="BREVO_API_KEY or BREVO_SENDER_EMAIL not configured in .env")
+
+    try:
+        async with httpx.AsyncClient(timeout=20) as http_client:
+            response = await http_client.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": BREVO_API_KEY,
+                    "Content-Type": "application/json",
+                    "accept": "application/json",
+                },
+                json={
+                    "sender": {"name": FROM_NAME, "email": BREVO_SENDER_EMAIL},
+                    "to": [{"email": to_email}],
+                    "subject": "Flyers Minds — Brevo Test Email",
+                    "htmlContent": f"<p>This is a test email from Flyers Minds. Sent at {datetime.now(timezone.utc).isoformat()}.</p>",
+                },
+            )
+        return {
+            "brevo_status_code": response.status_code,
+            "brevo_response": response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text,
+            "sent_to": to_email,
+            "sent_from": BREVO_SENDER_EMAIL,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/admin/enrollments/{enrollment_id}/resend")
+async def resend_enrollment_email(enrollment_id: str, user=Depends(get_current_user)):
+    """Resend the access email for an already-accepted enrollment."""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    if enrollment.get("status") != "accepted":
+        raise HTTPException(status_code=400, detail="Enrollment has not been accepted yet")
+
+    # Re-generate a fresh 7-day token
+    access_token = create_course_access_token(enrollment_id, enrollment["email"], enrollment.get("course", "aiml"))
+    access_expires_at = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+
+    await db.enrollments.update_one(
+        {"id": enrollment_id},
+        {"$set": {
+            "access_token": access_token,
+            "access_expires_at": access_expires_at,
+        }}
+    )
+
+    name = f"{enrollment['first_name']} {enrollment['last_name']}"
+    course_id = enrollment.get("course", "aiml")
+    course_names = {
+        "aiml": "AI / ML Engineering (120-Day Intensive)",
+        "webdev": "Full Stack Web Development",
+        "datascience": "Data Science",
+        "cloud": "Cloud & DevOps",
+    }
+    course_name = course_names.get(course_id, course_id.upper())
+    access_link = f"{FRONTEND_URL}/course-access/{access_token}"
+
+    html_content = f"""<html>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#0ea5e9 0%,#6366f1 100%);padding:36px 40px;text-align:center;">
+            <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.65);">Flyers Minds</p>
+            <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;">Enrollment Accepted!</h1>
+            <p style="margin:10px 0 0;font-size:14px;color:rgba(255,255,255,0.8);">Your journey starts now, {enrollment['first_name']}.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.6;">Hi <strong>{name}</strong>,</p>
+            <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+              Your enrollment request for <strong>{course_name}</strong> has been accepted by our team.
+            </p>
+            <p style="margin:0 0 28px;font-size:15px;color:#475569;line-height:1.6;">
+              Click the button below to access your course. This link is valid for <strong>7 days</strong>.
+            </p>
+            <table cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td align="center" style="padding-bottom:28px;">
+                  <a href="{access_link}"
+                     style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:12px;font-weight:700;font-size:15px;">
+                    Access My Course
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:14px 18px;margin-bottom:24px;">
+              <p style="margin:0;font-size:13px;color:#92400e;">
+                This link expires in 7 days. After that, contact us for a new invitation.
+              </p>
+            </div>
+            <p style="font-size:12px;color:#94a3b8;margin:0 0 6px;">Or copy this link into your browser:</p>
+            <p style="font-size:11px;color:#64748b;word-break:break-all;margin:0 0 24px;background:#f8fafc;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;">{access_link}</p>
+            <p style="font-size:13px;color:#94a3b8;margin:0;">If you did not apply for this course, ignore this email.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+            <p style="margin:0;font-size:12px;color:#94a3b8;">Flyers Minds · Chennai, India</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    email_sent = await send_email(
+        enrollment["email"],
+        f"Your Course Access Link — {course_name} | Flyers Minds",
+        html_content,
+    )
+    if not email_sent:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Email failed to send to {enrollment['email']}. Check BREVO_API_KEY and that the sender domain is verified in Brevo.",
+        )
+    return {"message": f"Access email resent successfully to {enrollment['email']}"}
+
+
 @api_router.get("/admin/enrollments")
 async def get_all_enrollments(user=Depends(get_current_user)):
     """List all enrollment requests (admin only)."""
