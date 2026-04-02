@@ -44,7 +44,7 @@ export default function LandingPage() {
     { name: 'Shalini', role: 'Junior Data Scientist', gradient: 'from-orange-500 to-pink-600' },
   ];
   const [modalTab, setModalTab] = useState('login');
-  const [pendingCourse, setPendingCourse] = useState('aiml');
+  const pendingCourse = 'aiml';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
   const programsRef = useRef(null);
