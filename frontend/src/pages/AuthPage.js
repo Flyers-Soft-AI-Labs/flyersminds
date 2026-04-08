@@ -147,7 +147,7 @@ export default function AuthPage() {
               {['login', 'signup'].map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => { if (tab === 'signup') { navigate('/enroll'); } else { setActiveTab(tab); } }}
                   className={`relative z-10 px-4 py-2.5 text-sm font-semibold transition-colors duration-300 ${
                     activeTab === tab ? 'text-slate-900' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}

@@ -16,6 +16,7 @@ const COURSE_INFO = {
     Icon: Brain,
     gradient: 'from-cyan-500 to-blue-600',
     tags: ['Python', 'ML', 'Deep Learning', 'RAG', 'FastAPI'],
+    active: true,
   },
   webdev: {
     title: 'Full Stack Web Dev',
@@ -24,6 +25,7 @@ const COURSE_INFO = {
     Icon: Code2,
     gradient: 'from-violet-500 to-purple-600',
     tags: ['React', 'Node.js', 'MongoDB', 'REST API'],
+    active: false,
   },
   datascience: {
     title: 'Data Science',
@@ -32,6 +34,7 @@ const COURSE_INFO = {
     Icon: Database,
     gradient: 'from-emerald-500 to-teal-600',
     tags: ['Python', 'SQL', 'Pandas', 'Tableau'],
+    active: false,
   },
   cloud: {
     title: 'Cloud & DevOps',
@@ -40,6 +43,7 @@ const COURSE_INFO = {
     Icon: Cloud,
     gradient: 'from-orange-500 to-red-500',
     tags: ['AWS', 'Docker', 'Kubernetes', 'CI/CD'],
+    active: false,
   },
 };
 
@@ -49,8 +53,10 @@ export default function EnrollmentPage() {
   const { API } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const course = COURSE_INFO[courseId] || COURSE_INFO['aiml'];
-  const { Icon, gradient } = course;
+  const [selectedCourseId, setSelectedCourseId] = useState(courseId || null);
+  const course = COURSE_INFO[selectedCourseId] || null;
+  const Icon = course?.Icon;
+  const gradient = course?.gradient;
 
   const [form, setForm] = useState({
     first_name: '',
@@ -75,7 +81,7 @@ export default function EnrollmentPage() {
         last_name: form.last_name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
-        course: courseId || 'aiml',
+        course: selectedCourseId || 'aiml',
         message: form.message.trim() || null,
       });
       setSubmitted(true);
@@ -85,6 +91,83 @@ export default function EnrollmentPage() {
       setLoading(false);
     }
   };
+
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#08090f] text-slate-900 dark:text-white">
+        {/* Minimal Navbar */}
+        <nav className="fixed top-0 left-0 right-0 z-50 px-6 pt-4">
+          <div className="mx-auto max-w-5xl flex items-center justify-between h-14 bg-white/80 dark:bg-black/40 backdrop-blur-2xl rounded-2xl border border-slate-200/60 dark:border-white/8 px-5 shadow-sm">
+            <Link to="/" className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg overflow-hidden ring-2 ring-purple-500/20">
+                <img src="/flyerslogo.jpg" alt="FM" className="h-7 w-7 object-cover" />
+              </div>
+              <span className="font-heading text-sm font-bold hidden sm:block">Flyers Minds</span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <button onClick={toggleTheme} className="h-8 w-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition">
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+              <button onClick={() => navigate('/')} className="flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition">
+                <ArrowLeft className="h-3.5 w-3.5" /> Back
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        <div className="mx-auto max-w-4xl px-4 pt-28 pb-16">
+          <div className="text-center mb-10">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-600 dark:text-cyan-400 mb-2">Get Started</p>
+            <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-white mb-3">Choose Your Course</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Select a program to begin your enrollment application.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {Object.entries(COURSE_INFO).map(([id, c]) => {
+              const CourseIcon = c.Icon;
+              return (
+                <button
+                  key={id}
+                  disabled={!c.active}
+                  onClick={() => c.active && setSelectedCourseId(id)}
+                  className={`relative overflow-hidden rounded-2xl text-left transition-all ${c.active ? 'cursor-pointer hover:scale-[1.02] hover:shadow-xl' : 'opacity-60 cursor-not-allowed'}`}
+                >
+                  <div className={`bg-gradient-to-br ${c.gradient} p-6`}>
+                    <div className="absolute inset-0 bg-black/20" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:18px_18px]" />
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+                          <CourseIcon className="h-6 w-6 text-white" />
+                        </div>
+                        {!c.active && (
+                          <span className="rounded-full bg-black/30 px-2.5 py-0.5 text-[10px] font-bold text-white/80 uppercase tracking-wide">Coming Soon</span>
+                        )}
+                        {c.active && (
+                          <span className="rounded-full bg-cyan-500 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wide">Available</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 mb-0.5">{c.subtitle}</p>
+                      <h3 className="font-heading text-lg font-extrabold text-white mb-1">{c.title}</h3>
+                      <p className="text-xs text-white/70 leading-relaxed mb-3">{c.description}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {c.tags.slice(0, 3).map((t) => (
+                          <span key={t} className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-center text-xs text-slate-400 mt-8">
+            Already enrolled?{' '}
+            <Link to="/login" className="text-cyan-600 dark:text-cyan-400 hover:underline font-medium">Log in here</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (

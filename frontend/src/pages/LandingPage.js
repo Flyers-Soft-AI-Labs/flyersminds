@@ -143,7 +143,7 @@ export default function LandingPage() {
             ) : (
               <div className="flex gap-2">
                 <button onClick={() => { setModalTab('login'); setAuthError(''); setShowModal(true); }} className="px-3.5 py-1.5 text-xs font-semibold rounded-full border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition">Log In</button>
-                <button onClick={() => { setModalTab('register'); setAuthError(''); setShowModal(true); }} className="px-3.5 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20 hover:opacity-90 transition">Sign Up</button>
+                <button onClick={() => navigate('/enroll')} className="px-3.5 py-1.5 text-xs font-semibold rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20 hover:opacity-90 transition">Sign Up</button>
               </div>
             )}
           </div>
@@ -340,7 +340,7 @@ export default function LandingPage() {
           {/* CTA row */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
             <button
-              onClick={() => { setModalTab('register'); setAuthError(''); setShowModal(true); }}
+              onClick={() => navigate('/enroll')}
               className="group flex items-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-9 py-4 text-sm font-bold text-white shadow-2xl shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:scale-[1.03] active:scale-[0.98] transition-all"
             >
               Apply for Free
@@ -405,7 +405,7 @@ export default function LandingPage() {
                 ) : (
                   <>
                     <li><button className="hover:text-slate-900 dark:hover:text-white transition" onClick={() => { setModalTab('login'); setShowModal(true); }}>Log In</button></li>
-                    <li><button className="hover:text-slate-900 dark:hover:text-white transition" onClick={() => { setModalTab('register'); setShowModal(true); }}>Sign Up</button></li>
+                    <li><button className="hover:text-slate-900 dark:hover:text-white transition" onClick={() => navigate('/enroll')}>Sign Up</button></li>
                     <li><Link to="/forgot-password" className="hover:text-slate-900 dark:hover:text-white transition">Forgot Password</Link></li>
                     <li><Link to="/admin-login" className="hover:text-slate-900 dark:hover:text-white transition">Admin Access</Link></li>
                   </>
@@ -531,7 +531,7 @@ export default function LandingPage() {
               {/* Tab switcher */}
               <div className="flex rounded-xl border border-slate-100 dark:border-white/8 p-1 gap-1 bg-slate-50 dark:bg-white/5">
                 {['login','register'].map(tab => (
-                  <button key={tab} onClick={() => { setModalTab(tab); setAuthError(''); }} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${modalTab===tab?'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm':'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
+                  <button key={tab} onClick={() => { if (tab === 'register') { closeModal(); navigate('/enroll'); } else { setModalTab(tab); setAuthError(''); } }} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${modalTab===tab?'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm':'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
                     {tab==='login'?'Log In':'Sign Up'}
                   </button>
                 ))}

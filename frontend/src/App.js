@@ -88,6 +88,7 @@ function App() {
               <Route path="/admin/profile/:userId" element={token && user?.role === 'admin' ? <ProfilePage /> : <Navigate to="/" replace />} />
               <Route path="/settings" element={token ? <SettingsPage /> : <Navigate to="/" replace />} />
               <Route path="/quiz" element={token && (user?.role === 'intern' || user?.role === 'admin') ? <QuizPage /> : <Navigate to="/" replace />} />
+              <Route path="/enroll" element={<EnrollmentPage />} />
               <Route path="/enroll/:courseId" element={<EnrollmentPage />} />
               <Route path="/course-access/:token" element={<CourseAccessPage />} />
               <Route path="/admin/enrollments" element={token && user?.role === 'admin' ? <AdminEnrollmentsPage /> : <Navigate to="/" replace />} />
