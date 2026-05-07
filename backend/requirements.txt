@@ -11,3 +11,4 @@ certifi==2024.8.30
 groq>=0.13.0
 httpx>=0.28.0
 ollama>=0.5.0
+asyncpg>=0.29.0

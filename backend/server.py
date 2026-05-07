@@ -16,6 +16,8 @@ import jwt
 import httpx
 import asyncio
 from groq import AsyncGroq
+from curriculum_postgres import create_curriculum_postgres_router
+from postgres import close_postgres_pool, init_postgres_pool
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -40,6 +42,7 @@ JWT_ALGORITHM = "HS256"
 ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
 MAX_ADMINS = 10
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
 
 CHATBOT_SYSTEM_PROMPT = """You are FlyersMind Bot, a Socratic AI tutor for Flyers Minds's 120-day AI/ML internship program based in Chennai, India.
 
@@ -171,6 +174,7 @@ class TaskComplete(BaseModel):
 class ChatMessage(BaseModel):
     role: str  # "user" or "assistant"
     content: str
+    reasoning_details: Optional[List] = None
 
 
 class ChatRequest(BaseModel):
@@ -1508,6 +1512,10 @@ async def root():
 
 @app.on_event("startup")
 async def startup():
+    try:
+        await init_postgres_pool()
+    except Exception as exc:
+        print(f"PostgreSQL curriculum connection failed: {exc}")
     print("\n" + "="*60)
     print("🚀 FLYERS MINDS API STARTING")
     print("="*60)
@@ -1524,6 +1532,7 @@ async def startup():
     print("="*60 + "\n")
 
 
+api_router.include_router(create_curriculum_postgres_router(get_current_user))
 app.include_router(api_router)
 
 logging.basicConfig(
@@ -1536,6 +1545,7 @@ logger = logging.getLogger(__name__)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+    await close_postgres_pool()
 
 
 if __name__ == "__main__":
