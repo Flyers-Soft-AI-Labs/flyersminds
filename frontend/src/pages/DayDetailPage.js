@@ -121,25 +121,38 @@ export default function DayDetailPage() {
   }, [API, token, dayNumber, isAdmin]);
 
   useEffect(() => {
-    const data = getDayData(parseInt(dayNumber, 10));
-    setDayData(data);
-    fetchProgress();
-    fetchGitSubmission();
-    // Fetch admin overrides and merge with static data
-    axios.get(`${API}/curriculum/${dayNumber}`, {
+    const dayNum = parseInt(dayNumber, 10);
+    // Try PG curriculum first, then fall back to static + Mongo overrides
+    axios.get(`${API}/pg-curriculum/days/${dayNum}?course_slug=aiml`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => {
-      if (res.data && Object.keys(res.data).length > 0) {
-        setDayData((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            ...(res.data.topic ? { topic: res.data.topic } : {}),
-            ...(res.data.resource_links ? { resourceLinks: res.data.resource_links } : {}),
-          };
-        });
+      if (res.data && res.data.day) {
+        setDayData(res.data);
+      } else {
+        throw new Error('Empty PG response');
       }
-    }).catch(() => {});
+    }).catch(() => {
+      // Fall back to static data
+      const staticData = getDayData(dayNum);
+      setDayData(staticData);
+      // Merge Mongo overrides for static fallback
+      axios.get(`${API}/curriculum/${dayNumber}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((res) => {
+        if (res.data && Object.keys(res.data).length > 0) {
+          setDayData((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              ...(res.data.topic ? { topic: res.data.topic } : {}),
+              ...(res.data.resource_links ? { resourceLinks: res.data.resource_links } : {}),
+            };
+          });
+        }
+      }).catch(() => {});
+    });
+    fetchProgress();
+    fetchGitSubmission();
   }, [dayNumber, fetchProgress, fetchGitSubmission, API, token]);
 
   useEffect(() => {

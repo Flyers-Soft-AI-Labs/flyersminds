@@ -5,7 +5,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import Navbar from '../components/Navbar';
 import MultiCodeEditor from '../components/MultiCodeEditor';
-import { months, curriculum } from '../data/curriculum';
+import { months as staticMonths, curriculum as staticCurriculum } from '../data/curriculum';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
@@ -37,6 +37,9 @@ import {
   GitBranch,
   Lightbulb,
   ExternalLink,
+  Sparkles,
+  Bell,
+  Loader2,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -85,6 +88,17 @@ export default function Dashboard() {
   const [browsingCourses, setBrowsingCourses] = useState(false);
   const [adminSelectedCategory, setAdminSelectedCategory] = useState(null);
   const [adminSelectedCourse, setAdminSelectedCourse] = useState(null);
+  // PostgreSQL curriculum (source of truth when available)
+  const [pgCurriculum, setPgCurriculum] = useState(null); // array of day objects
+  const [pgMonths, setPgMonths] = useState(null); // months structure built from PG days
+  // Use PG data when available, otherwise static
+  const curriculum = pgCurriculum || staticCurriculum;
+  const months = pgMonths || staticMonths;
+  // Admin AI proposal states
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiInstruction, setAiInstruction] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [pendingProposalCount, setPendingProposalCount] = useState(0);
   // Admin curriculum editing states
   const [curriculumOverrides, setCurriculumOverrides] = useState({});
   const [editingDay, setEditingDay] = useState(null);
@@ -102,6 +116,89 @@ export default function Dashboard() {
     setBrowsingCourses(false);
     setAdminSelectedCategory(null);
     setAdminSelectedCourse(null);
+  };
+
+  // Build months structure from flat PG days array
+  const buildMonthsFromDays = (days) => {
+    const monthMap = {};
+    days.forEach((d) => {
+      const m = d.month || 1;
+      const w = d.week || 1;
+      if (!monthMap[m]) {
+        monthMap[m] = { id: m, title: d.monthTitle || `Month ${m}`, subtitle: '', weeks: {} };
+      }
+      if (!monthMap[m].weeks[w]) {
+        monthMap[m].weeks[w] = { id: w, title: d.weekTitle || `Week ${w}`, days: [] };
+      }
+      monthMap[m].weeks[w].days.push(d.day);
+    });
+    return Object.values(monthMap)
+      .sort((a, b) => a.id - b.id)
+      .map((m) => ({
+        ...m,
+        weeks: Object.values(m.weeks).sort((a, b) => a.id - b.id),
+      }));
+  };
+
+  // Fetch published curriculum from PostgreSQL
+  const fetchPgCurriculum = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/pg-curriculum/published?course_slug=aiml`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.days?.length > 0) {
+        setPgCurriculum(res.data.days);
+        setPgMonths(buildMonthsFromDays(res.data.days));
+      }
+    } catch (err) {
+      // PG not available — fall back to static data silently
+      console.log('PG curriculum not available, using static data');
+    }
+  }, [API, token]);
+
+  // Fetch pending proposal count (admin only)
+  const fetchPendingCount = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await axios.get(`${API}/admin/pg-curriculum/proposals/pending-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPendingProposalCount(res.data.count || 0);
+    } catch (err) {
+      // Ignore — badge just won't show
+    }
+  }, [API, token, isAdmin]);
+
+  useEffect(() => {
+    fetchPgCurriculum();
+    fetchPendingCount();
+  }, [fetchPgCurriculum, fetchPendingCount]);
+
+  // AI proposal submission
+  const handleAiSubmit = async () => {
+    if (!aiInstruction.trim()) {
+      toast.error('Please enter an instruction for the AI');
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const res = await axios.post(
+        `${API}/admin/pg-curriculum/ai-proposals`,
+        { course_slug: 'aiml', instruction: aiInstruction.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('AI proposal created!', {
+        description: res.data.summary?.slice(0, 100),
+      });
+      setShowAiModal(false);
+      setAiInstruction('');
+      fetchPendingCount();
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Failed to generate AI proposal';
+      toast.error(msg);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const fetchOverrides = useCallback(async () => {
@@ -131,13 +228,13 @@ export default function Dashboard() {
   }, [isAdmin, adminSelectedCourse, fetchOverrides]);
 
   const handleEditDay = (dayNum) => {
-    const dayData = curriculum.find((d) => d.day === dayNum);
+    const curDay = curriculum.find((d) => d.day === dayNum);
     const override = curriculumOverrides[dayNum];
     setEditingDay(dayNum);
-    setEditTopic(override?.topic ?? dayData?.topic ?? '');
+    setEditTopic(override?.topic ?? curDay?.topic ?? '');
     setEditVideos(
       override?.resource_links ??
-      dayData?.resourceLinks?.map((r) => ({ title: r.title, url: r.url })) ??
+      curDay?.resourceLinks?.map((r) => ({ title: r.title, url: r.url })) ??
       []
     );
   };
@@ -502,6 +599,30 @@ export default function Dashboard() {
                     {CATEGORIES.flatMap(c => c.courses).find(c => c.id === adminSelectedCourse)?.title}
                   </span>
                 </div>
+
+                {/* Admin AI Curriculum Actions */}
+                <div className="mb-6 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => setShowAiModal(true)}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-violet-500 hover:to-purple-500 shadow-md shadow-violet-500/20 transition-all"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Generate AI Curriculum Update
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/curriculum-proposals')}
+                    className="relative flex items-center gap-2 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                  >
+                    <Bell className="h-4 w-4" />
+                    Review Proposals
+                    {pendingProposalCount > 0 && (
+                      <span className="absolute -top-2 -right-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                        {pendingProposalCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
                 <CurriculumTabs
                   months={months}
                   curriculum={curriculum}
@@ -644,6 +765,82 @@ export default function Dashboard() {
                 className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2 text-sm font-semibold text-white hover:from-cyan-500 hover:to-blue-500 disabled:opacity-60 transition-all shadow-md shadow-cyan-500/20"
               >
                 {editSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Curriculum Update Modal */}
+      {showAiModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => !aiLoading && setShowAiModal(false)}
+        >
+          <div
+            className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl animate-in zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-6 py-4 bg-gradient-to-r from-violet-50 dark:from-violet-950/30 to-purple-50 dark:to-purple-950/30">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">AI Curriculum Update</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Describe the changes you want AI to make</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAiModal(false)}
+                disabled={aiLoading}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-700 dark:hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-white mb-2">Instruction</label>
+                <textarea
+                  value={aiInstruction}
+                  onChange={(e) => setAiInstruction(e.target.value)}
+                  rows={5}
+                  disabled={aiLoading}
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-shadow resize-none"
+                  placeholder="e.g. Update days 10-15 to include more hands-on PyTorch exercises..."
+                />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                The AI will read your current published curriculum and generate a full updated proposal. You can review and approve/reject it before it goes live.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-white/10 px-6 py-4 bg-slate-50 dark:bg-slate-800/50">
+              <button
+                onClick={() => setShowAiModal(false)}
+                disabled={aiLoading}
+                className="rounded-xl border border-slate-300 dark:border-white/10 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAiSubmit}
+                disabled={aiLoading || !aiInstruction.trim()}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-2 text-sm font-semibold text-white hover:from-violet-500 hover:to-purple-500 disabled:opacity-60 transition-all shadow-md shadow-violet-500/20"
+              >
+                {aiLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generate Proposal
+                  </>
+                )}
               </button>
             </div>
           </div>

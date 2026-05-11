@@ -18,6 +18,7 @@ import EnrollmentPage from './pages/EnrollmentPage';
 import AdminEnrollmentsPage from './pages/AdminEnrollmentsPage';
 import AdminEnrollmentDetailPage from './pages/AdminEnrollmentDetailPage';
 import CourseAccessPage from './pages/CourseAccessPage';
+import AdminCurriculumProposalsPage from './pages/AdminCurriculumProposalsPage';
 import Background from './components/Background';
 import ChatBot from './components/ChatBot';
 import './App.css';
@@ -91,6 +92,7 @@ function App() {
               <Route path="/enroll" element={<EnrollmentPage />} />
               <Route path="/enroll/:courseId" element={<EnrollmentPage />} />
               <Route path="/course-access/:token" element={<CourseAccessPage />} />
+              <Route path="/admin/curriculum-proposals" element={token && user?.role === 'admin' ? <AdminCurriculumProposalsPage /> : <Navigate to="/" replace />} />
               <Route path="/admin/enrollments" element={token && user?.role === 'admin' ? <AdminEnrollmentsPage /> : <Navigate to="/" replace />} />
               <Route path="/admin/enrollments/:enrollmentId" element={token && user?.role === 'admin' ? <AdminEnrollmentDetailPage /> : <Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />

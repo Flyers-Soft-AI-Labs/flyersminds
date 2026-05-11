@@ -2,15 +2,25 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../App';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon, Settings, LayoutDashboard, Info } from 'lucide-react';
+import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon, Settings, LayoutDashboard, Info, Sparkles } from 'lucide-react';
+import axios from 'axios';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, token, API } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.role === 'admin' && token && API) {
+      axios.get(`${API}/admin/pg-curriculum/proposals/pending-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((res) => setPendingCount(res.data.count || 0)).catch(() => {});
+    }
+  }, [user, token, API]);
 
   const teamMembers = [
     { name: 'Uday Kanth', role: 'CEO', gradient: 'from-violet-500 to-purple-600' },
@@ -128,13 +138,27 @@ export default function Navbar() {
 
                     <div className="p-2 space-y-1">
                       {user.role === 'admin' && (
-                        <button
-                          onClick={() => { setShowProfileDropdown(false); navigate('/admin'); }}
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-cyan-700 dark:text-cyan-400 transition-all hover:bg-cyan-50 dark:hover:bg-cyan-500/10 hover:text-cyan-800 dark:hover:text-cyan-300"
-                        >
-                          <LayoutDashboard className="h-4 w-4" />
-                          Admin Dashboard
-                        </button>
+                        <>
+                          <button
+                            onClick={() => { setShowProfileDropdown(false); navigate('/admin'); }}
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-cyan-700 dark:text-cyan-400 transition-all hover:bg-cyan-50 dark:hover:bg-cyan-500/10 hover:text-cyan-800 dark:hover:text-cyan-300"
+                          >
+                            <LayoutDashboard className="h-4 w-4" />
+                            Admin Dashboard
+                          </button>
+                          <button
+                            onClick={() => { setShowProfileDropdown(false); navigate('/admin/curriculum-proposals'); }}
+                            className="relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-violet-700 dark:text-violet-400 transition-all hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-800 dark:hover:text-violet-300"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                            Curriculum Proposals
+                            {pendingCount > 0 && (
+                              <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                                {pendingCount}
+                              </span>
+                            )}
+                          </button>
+                        </>
                       )}
 
                       <button

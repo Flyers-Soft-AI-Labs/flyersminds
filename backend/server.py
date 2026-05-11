@@ -43,6 +43,7 @@ ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
 MAX_ADMINS = 10
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+CURRICULUM_AI_MODEL = os.environ.get('CURRICULUM_AI_MODEL', 'anthropic/claude-sonnet-4-20250514')
 
 CHATBOT_SYSTEM_PROMPT = """You are FlyersMind Bot, a Socratic AI tutor for Flyers Minds's 120-day AI/ML internship program based in Chennai, India.
 
@@ -1532,7 +1533,11 @@ async def startup():
     print("="*60 + "\n")
 
 
-api_router.include_router(create_curriculum_postgres_router(get_current_user))
+api_router.include_router(create_curriculum_postgres_router(
+    get_current_user,
+    openrouter_api_key=OPENROUTER_API_KEY,
+    curriculum_ai_model=CURRICULUM_AI_MODEL,
+))
 app.include_router(api_router)
 
 logging.basicConfig(
