@@ -1321,6 +1321,236 @@ function ProjectColumn({ title, items, tone }) {
   );
 }
 
+function DashboardSidebar({ activeSection, isOpen, onSectionChange }) {
+  return (
+    <aside className={`${isOpen ? 'block' : 'hidden'} shrink-0 lg:block lg:w-72`}>
+      <div className="sticky top-28 rounded-2xl border border-slate-300 bg-white/80 p-3 shadow-md backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+        <div className="mb-3 px-3 py-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-600 dark:text-cyan-400">Workspace</p>
+          <h2 className="font-heading text-lg font-bold text-slate-900 dark:text-white">FlyersMinds</h2>
+        </div>
+        <nav className="space-y-1">
+          {DASHBOARD_NAV_ITEMS.map(({ id, label, Icon }) => {
+            const isActive = activeSection === id;
+            return (
+              <button
+                key={id}
+                onClick={() => onSectionChange(id)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition-all ${
+                  isActive
+                    ? 'border border-cyan-400/40 bg-cyan-100 text-cyan-800 shadow-sm shadow-cyan-500/10 dark:bg-cyan-500/15 dark:text-cyan-200'
+                    : 'border border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </aside>
+  );
+}
+
+function DashboardPanel({ title, subtitle, Icon, children }) {
+  return (
+    <section className="rounded-2xl border border-slate-300 bg-white/80 p-5 shadow-md backdrop-blur-md dark:border-white/10 dark:bg-white/5 sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20">
+            <Icon className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">{title}</h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{subtitle}</p>
+          </div>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function InfoTile({ label, value }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-950/40">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-slate-900 dark:text-white">{value}</p>
+    </div>
+  );
+}
+
+function CourseCard({ course, isSelected, onClick }) {
+  const statusClass = {
+    Available: 'border-emerald-300 bg-emerald-100 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300',
+    'In Progress': 'border-cyan-300 bg-cyan-100 text-cyan-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-300',
+    Locked: 'border-slate-300 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400',
+  }[course.status];
+  const isLocked = course.status === 'Locked';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group w-full rounded-2xl border bg-white p-5 text-left transition hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/10 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 dark:bg-white/5 dark:hover:border-cyan-500/40 ${
+        isSelected
+          ? 'border-cyan-400 shadow-lg shadow-cyan-500/10 dark:border-cyan-500/50'
+          : 'border-slate-200 dark:border-white/10'
+      } ${isLocked ? 'cursor-pointer opacity-75' : 'cursor-pointer'}`}
+    >
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 font-heading text-lg font-bold text-white shadow-lg shadow-cyan-500/20">
+          {course.month}
+        </div>
+        <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}>
+          {course.status}
+        </span>
+      </div>
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Month {course.month}</p>
+      <h3 className="mt-2 font-heading text-xl font-bold text-slate-900 dark:text-white">{course.name}</h3>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{course.details}</p>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <InfoTile label="Level" value={course.level} />
+        <InfoTile label="Duration" value={course.duration} />
+      </div>
+      <div className="mt-5 text-sm font-semibold text-cyan-700 dark:text-cyan-300">
+        {isLocked ? 'Locked' : course.status === 'In Progress' ? 'Continue' : 'Open module'}
+      </div>
+    </button>
+  );
+}
+
+function ModuleDetail({ module, onBack }) {
+  const actionLabel = module.status === 'In Progress' ? 'Continue' : 'Start Module';
+
+  return (
+    <DashboardPanel
+      title={module.name}
+      subtitle={`Month ${module.month} module details and learning path.`}
+      Icon={BookOpen}
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back to Courses
+      </button>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">Month {module.month}</p>
+              <h2 className="mt-2 font-heading text-3xl font-bold text-slate-900 dark:text-white">{module.name}</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">{module.details}</p>
+            </div>
+            <ModuleStatusBadge status={module.status} />
+          </div>
+
+          <div className="mb-6 grid gap-3 sm:grid-cols-3">
+            <InfoTile label="Level" value={module.level} />
+            <InfoTile label="Duration" value={module.duration} />
+            <InfoTile label="Progress" value={`${module.progress}%`} />
+          </div>
+
+          <div>
+            <h3 className="mb-3 font-heading text-xl font-bold text-slate-900 dark:text-white">Lessons and Topics</h3>
+            <div className="space-y-3">
+              {module.lessons.map((lesson, index) => (
+                <div
+                  key={lesson}
+                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-xs font-bold text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-300">
+                    {index + 1}
+                  </span>
+                  {lesson}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+          <p className="text-sm font-bold text-slate-900 dark:text-white">Module Progress</p>
+          <div className="mt-4">
+            <Progress value={module.progress} className="h-2 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-cyan-500" />
+            <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span>{module.progress}% complete</span>
+              <span>{module.status}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="mt-6 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition hover:from-cyan-500 hover:to-blue-500"
+          >
+            {actionLabel}
+          </button>
+        </div>
+      </div>
+    </DashboardPanel>
+  );
+}
+
+function ModuleStatusBadge({ status }) {
+  const statusClass = {
+    Available: 'border-emerald-300 bg-emerald-100 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300',
+    'In Progress': 'border-cyan-300 bg-cyan-100 text-cyan-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-300',
+    Locked: 'border-slate-300 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400',
+  }[status];
+
+  return (
+    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}>
+      {status}
+    </span>
+  );
+}
+
+function LockedCertificateCard({ title, copy, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/10 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 dark:border-white/10 dark:bg-white/5 dark:hover:border-cyan-500/40"
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-cyan-600 dark:bg-slate-950/50 dark:text-cyan-400">
+          <ScrollText className="h-5 w-5" />
+        </div>
+        <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
+          Locked
+        </span>
+      </div>
+      <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">{title}</h3>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{copy}</p>
+    </button>
+  );
+}
+
+function ProjectColumn({ title, items, tone }) {
+  const toneClass = {
+    green: 'text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/20',
+    amber: 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/20',
+    cyan: 'text-cyan-700 dark:text-cyan-300 bg-cyan-500/10 border-cyan-500/20',
+  }[tone];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
+      <h3 className={`mb-4 rounded-xl border px-4 py-2 text-sm font-bold ${toneClass}`}>{title}</h3>
+      <div className="space-y-3">
+        {items.map((item) => (
+          <div key={item} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300">
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Button({ className, ...props }) {
   return <button className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 ${className}`} {...props} />
 }
