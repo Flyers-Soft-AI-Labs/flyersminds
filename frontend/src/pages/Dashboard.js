@@ -20,6 +20,13 @@ import {
   Trophy,
   Flame,
   Gauge,
+  LayoutDashboard,
+  Search,
+  Award,
+  ScrollText,
+  FolderKanban,
+  Settings,
+  Menu,
   Zap,
   GraduationCap,
   Briefcase,
@@ -75,12 +82,35 @@ const CATEGORIES = [
   },
 ];
 
+const AVAILABLE_COURSES = [
+  { month: 1, name: 'Python', level: 'Foundation', duration: '14 days', status: 'Available', progress: 0, details: 'Core Python syntax, functions, data structures, files, and practical problem solving.', lessons: ['Python syntax and variables', 'Control flow and functions', 'Lists, dictionaries, and tuples', 'File handling and exceptions', 'Practice problems and mini tasks'] },
+  { month: 2, name: 'FastAPI', level: 'Backend', duration: '10 days', status: 'Locked', progress: 0, details: 'API design, routing, validation, auth basics, and production-ready service patterns.', lessons: ['FastAPI project setup', 'Routes, request bodies, and validation', 'Authentication basics', 'Database integration patterns', 'API testing and deployment checks'] },
+  { month: 3, name: 'Machine Learning', level: 'Intermediate', duration: '24 days', status: 'Locked', progress: 0, details: 'Supervised learning, model evaluation, feature engineering, and applied ML workflows.', lessons: ['Data preprocessing workflow', 'Regression and classification', 'Model evaluation metrics', 'Feature engineering', 'ML project packaging'] },
+  { month: 4, name: 'Advanced Deep Learning', level: 'Advanced', duration: '20 days', status: 'Locked', progress: 0, details: 'Neural networks, CNNs, sequence models, optimization, and model training practice.', lessons: ['Neural network fundamentals', 'CNN architecture practice', 'Sequence models', 'Training optimization', 'Deep learning project review'] },
+  { month: 5, name: 'RAG & Production AI', level: 'Professional', duration: '28 days', status: 'Locked', progress: 0, details: 'Retrieval augmented generation, deployment, monitoring, evaluation, and production AI reliability.', lessons: ['Document ingestion', 'Embeddings and vector search', 'RAG application design', 'LLM evaluation', 'Production monitoring'] },
+  { month: 6, name: 'Capstone Project', level: 'Portfolio', duration: '18 days', status: 'Locked', progress: 0, details: 'End-to-end project planning, implementation, submission, review, and presentation.', lessons: ['Project scope and planning', 'Implementation milestones', 'Submission checklist', 'Review feedback loop', 'Final presentation'] },
+];
+
+const DASHBOARD_NAV_ITEMS = [
+  { id: 'search', label: 'Search Engine', Icon: Search },
+  { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { id: 'courses', label: 'Courses', Icon: BookOpen },
+  { id: 'achievements', label: 'Achievements', Icon: Award },
+  { id: 'certificates', label: 'Certificates', Icon: ScrollText },
+  { id: 'projects', label: 'Projects', Icon: FolderKanban },
+  { id: 'settings', label: 'Settings', Icon: Settings },
+];
+
 export default function Dashboard() {
   const { token, API, user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const navigate = useNavigate();
   const [progress, setProgress] = useState([]);
   const [activeMonth, setActiveMonth] = useState('1');
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [courseQuery, setCourseQuery] = useState('');
+  const [selectedModule, setSelectedModule] = useState(null);
   // Admin course browser states
   const [browsingCourses, setBrowsingCourses] = useState(false);
   const [adminSelectedCategory, setAdminSelectedCategory] = useState(null);
@@ -236,10 +266,28 @@ export default function Dashboard() {
 
   const currentDay = currentStreak + 1 > 120 ? 120 : currentStreak + 1;
 
-  return (
-    <div className="mesh-bg min-h-screen pb-12">
-      <Navbar />
-      <main className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+  const normalizedCourseQuery = courseQuery.trim().toLowerCase();
+  const matchedCourse = normalizedCourseQuery
+    ? AVAILABLE_COURSES.find((course) => course.name.toLowerCase() === normalizedCourseQuery)
+    : null;
+
+  const handleSectionChange = (sectionId) => {
+    setActiveSection(sectionId);
+    if (sectionId !== 'courses') setSelectedModule(null);
+    setMobileNavOpen(false);
+  };
+
+  const handleModuleClick = (course) => {
+    if (course.status === 'Locked') {
+      toast.warning('This course is locked');
+      return;
+    }
+
+    setSelectedModule(course);
+  };
+
+  const renderDashboardContent = () => (
+    <>
 
         {/* Check Where You Are — Quiz card (intern only) */}
         {!isAdmin && (
@@ -534,7 +582,200 @@ export default function Dashboard() {
             overrides={curriculumOverrides}
           />
         )}
-      </main>
+      </>
+  );
+
+  const renderActiveSection = () => {
+    if (activeSection === 'dashboard') return renderDashboardContent();
+
+    if (activeSection === 'search') {
+      return (
+        <DashboardPanel
+          title="Search Engine"
+          subtitle="Search the available FlyersMinds courses by course name."
+          Icon={Search}
+        >
+          <div className="space-y-6">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Course name
+              </label>
+              <input
+                value={courseQuery}
+                onChange={(e) => setCourseQuery(e.target.value)}
+                placeholder="Try Python, FastAPI, RAG & Production AI..."
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30 dark:border-white/10 dark:bg-slate-950/60 dark:text-white"
+              />
+            </div>
+
+            {normalizedCourseQuery && (
+              matchedCourse ? (
+                <div className="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-5 dark:border-cyan-500/20 dark:bg-cyan-500/10">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">{matchedCourse.name}</h3>
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{matchedCourse.details}</p>
+                    </div>
+                    <Badge className="border-cyan-400/40 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300">
+                      {matchedCourse.status}
+                    </Badge>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <InfoTile label="Level" value={matchedCourse.level} />
+                    <InfoTile label="Duration" value={matchedCourse.duration} />
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-semibold text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                  Course not available
+                </div>
+              )
+            )}
+
+            <div>
+              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Available Courses</p>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {AVAILABLE_COURSES.map((course) => (
+                  <button
+                    key={course.name}
+                    onClick={() => setCourseQuery(course.name)}
+                    className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-cyan-400 hover:bg-cyan-50 dark:border-white/10 dark:bg-white/5 dark:hover:border-cyan-500/40 dark:hover:bg-cyan-500/10"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-white">{course.name}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Month {course.month} - {course.status}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DashboardPanel>
+      );
+    }
+
+    if (activeSection === 'courses') {
+      if (selectedModule) {
+        return (
+          <ModuleDetail
+            module={selectedModule}
+            onBack={() => setSelectedModule(null)}
+          />
+        );
+      }
+
+      return (
+        <DashboardPanel
+          title="Courses"
+          subtitle="All available FlyersMinds course modules."
+          Icon={BookOpen}
+        >
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {AVAILABLE_COURSES.map((course) => (
+              <CourseCard
+                key={course.name}
+                course={course}
+                isSelected={selectedModule?.name === course.name}
+                onClick={() => handleModuleClick(course)}
+              />
+            ))}
+          </div>
+        </DashboardPanel>
+      );
+    }
+
+    if (activeSection === 'achievements') {
+      return (
+        <DashboardPanel title="Achievements" subtitle="Your unlocked milestones will appear here." Icon={Award}>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center dark:border-white/10 dark:bg-white/5">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-300">
+              <Award className="h-7 w-7" />
+            </div>
+            <h3 className="font-heading text-xl font-bold text-slate-900 dark:text-white">No achievements unlocked yet</h3>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Achievements will appear here as you progress.</p>
+          </div>
+        </DashboardPanel>
+      );
+    }
+
+    if (activeSection === 'certificates') {
+      return (
+        <DashboardPanel title="Certificates" subtitle="Certificate tracks unlock as you complete modules." Icon={ScrollText}>
+          <div className="grid gap-4 md:grid-cols-2">
+            {[
+              ['Python Foundations Certificate', 'Complete Python to unlock this certificate.'],
+              ['FastAPI Backend Certificate', 'Complete FastAPI to unlock this certificate.'],
+              ['Machine Learning Certificate', 'Complete Machine Learning to unlock this certificate.'],
+              ['Production AI Certificate', 'Complete Production AI to unlock this certificate.'],
+            ].map(([title, copy]) => (
+              <LockedCertificateCard
+                key={title}
+                title={title}
+                copy={copy}
+                onClick={() => toast.warning('This certificate is locked')}
+              />
+            ))}
+          </div>
+        </DashboardPanel>
+      );
+    }
+
+    if (activeSection === 'projects') {
+      return (
+        <DashboardPanel title="Projects" subtitle="Track submitted, pending, and upcoming projects." Icon={FolderKanban}>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ProjectColumn title="Pending" items={['Python']} tone="amber" />
+            <ProjectColumn title="Upcoming" items={['FastAPI', 'Machine Learning', 'Advanced Deep Learning', 'RAG & Production AI', 'Capstone Project']} tone="cyan" />
+          </div>
+        </DashboardPanel>
+      );
+    }
+
+    return (
+      <DashboardPanel title="Settings" subtitle="Profile details and basic dashboard options." Icon={Settings}>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
+            <p className="mb-4 text-sm font-bold text-slate-900 dark:text-white">Profile Details</p>
+            <div className="space-y-3">
+              <InfoTile label="Name" value={user?.name || 'FlyersMinds Learner'} />
+              <InfoTile label="Email" value={user?.email || 'Not available'} />
+              <InfoTile label="Role" value={user?.role || 'intern'} />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
+            <p className="mb-4 text-sm font-bold text-slate-900 dark:text-white">Basic Options</p>
+            <div className="space-y-3">
+              {['Email progress updates', 'Weekly milestone reminders', 'Show locked course days'].map((option) => (
+                <label key={option} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300">
+                  <span>{option}</span>
+                  <input type="checkbox" defaultChecked={option !== 'Show locked course days'} className="h-4 w-4 accent-cyan-500" />
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </DashboardPanel>
+    );
+  };
+
+  return (
+    <div className="mesh-bg min-h-screen pb-12">
+      <Navbar />
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-8 sm:px-6 lg:flex-row lg:px-8">
+        <button
+          onClick={() => setMobileNavOpen((open) => !open)}
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200 lg:hidden"
+        >
+          <Menu className="h-4 w-4" />
+          Navigation
+        </button>
+        <DashboardSidebar
+          activeSection={activeSection}
+          isOpen={mobileNavOpen}
+          onSectionChange={handleSectionChange}
+        />
+        <main className="min-w-0 flex-1">
+          {renderActiveSection()}
+        </main>
+      </div>
 
       {/* Admin Edit Day Modal */}
       {editingDay && (
@@ -649,6 +890,236 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function DashboardSidebar({ activeSection, isOpen, onSectionChange }) {
+  return (
+    <aside className={`${isOpen ? 'block' : 'hidden'} shrink-0 lg:block lg:w-72`}>
+      <div className="sticky top-28 rounded-2xl border border-slate-300 bg-white/80 p-3 shadow-md backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+        <div className="mb-3 px-3 py-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-600 dark:text-cyan-400">Workspace</p>
+          <h2 className="font-heading text-lg font-bold text-slate-900 dark:text-white">FlyersMinds</h2>
+        </div>
+        <nav className="space-y-1">
+          {DASHBOARD_NAV_ITEMS.map(({ id, label, Icon }) => {
+            const isActive = activeSection === id;
+            return (
+              <button
+                key={id}
+                onClick={() => onSectionChange(id)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition-all ${
+                  isActive
+                    ? 'border border-cyan-400/40 bg-cyan-100 text-cyan-800 shadow-sm shadow-cyan-500/10 dark:bg-cyan-500/15 dark:text-cyan-200'
+                    : 'border border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </aside>
+  );
+}
+
+function DashboardPanel({ title, subtitle, Icon, children }) {
+  return (
+    <section className="rounded-2xl border border-slate-300 bg-white/80 p-5 shadow-md backdrop-blur-md dark:border-white/10 dark:bg-white/5 sm:p-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20">
+            <Icon className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">{title}</h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{subtitle}</p>
+          </div>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function InfoTile({ label, value }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-950/40">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-slate-900 dark:text-white">{value}</p>
+    </div>
+  );
+}
+
+function CourseCard({ course, isSelected, onClick }) {
+  const statusClass = {
+    Available: 'border-emerald-300 bg-emerald-100 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300',
+    'In Progress': 'border-cyan-300 bg-cyan-100 text-cyan-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-300',
+    Locked: 'border-slate-300 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400',
+  }[course.status];
+  const isLocked = course.status === 'Locked';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group w-full rounded-2xl border bg-white p-5 text-left transition hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/10 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 dark:bg-white/5 dark:hover:border-cyan-500/40 ${
+        isSelected
+          ? 'border-cyan-400 shadow-lg shadow-cyan-500/10 dark:border-cyan-500/50'
+          : 'border-slate-200 dark:border-white/10'
+      } ${isLocked ? 'cursor-pointer opacity-75' : 'cursor-pointer'}`}
+    >
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 font-heading text-lg font-bold text-white shadow-lg shadow-cyan-500/20">
+          {course.month}
+        </div>
+        <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}>
+          {course.status}
+        </span>
+      </div>
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Month {course.month}</p>
+      <h3 className="mt-2 font-heading text-xl font-bold text-slate-900 dark:text-white">{course.name}</h3>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{course.details}</p>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <InfoTile label="Level" value={course.level} />
+        <InfoTile label="Duration" value={course.duration} />
+      </div>
+      <div className="mt-5 text-sm font-semibold text-cyan-700 dark:text-cyan-300">
+        {isLocked ? 'Locked' : course.status === 'In Progress' ? 'Continue' : 'Open module'}
+      </div>
+    </button>
+  );
+}
+
+function ModuleDetail({ module, onBack }) {
+  const actionLabel = module.status === 'In Progress' ? 'Continue' : 'Start Module';
+
+  return (
+    <DashboardPanel
+      title={module.name}
+      subtitle={`Month ${module.month} module details and learning path.`}
+      Icon={BookOpen}
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Back to Courses
+      </button>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">Month {module.month}</p>
+              <h2 className="mt-2 font-heading text-3xl font-bold text-slate-900 dark:text-white">{module.name}</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">{module.details}</p>
+            </div>
+            <ModuleStatusBadge status={module.status} />
+          </div>
+
+          <div className="mb-6 grid gap-3 sm:grid-cols-3">
+            <InfoTile label="Level" value={module.level} />
+            <InfoTile label="Duration" value={module.duration} />
+            <InfoTile label="Progress" value={`${module.progress}%`} />
+          </div>
+
+          <div>
+            <h3 className="mb-3 font-heading text-xl font-bold text-slate-900 dark:text-white">Lessons and Topics</h3>
+            <div className="space-y-3">
+              {module.lessons.map((lesson, index) => (
+                <div
+                  key={lesson}
+                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-xs font-bold text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-300">
+                    {index + 1}
+                  </span>
+                  {lesson}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/5">
+          <p className="text-sm font-bold text-slate-900 dark:text-white">Module Progress</p>
+          <div className="mt-4">
+            <Progress value={module.progress} className="h-2 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-cyan-500" />
+            <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span>{module.progress}% complete</span>
+              <span>{module.status}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="mt-6 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-cyan-500/20 transition hover:from-cyan-500 hover:to-blue-500"
+          >
+            {actionLabel}
+          </button>
+        </div>
+      </div>
+    </DashboardPanel>
+  );
+}
+
+function ModuleStatusBadge({ status }) {
+  const statusClass = {
+    Available: 'border-emerald-300 bg-emerald-100 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300',
+    'In Progress': 'border-cyan-300 bg-cyan-100 text-cyan-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-300',
+    Locked: 'border-slate-300 bg-slate-100 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400',
+  }[status];
+
+  return (
+    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClass}`}>
+      {status}
+    </span>
+  );
+}
+
+function LockedCertificateCard({ title, copy, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:border-cyan-400/60 hover:shadow-lg hover:shadow-cyan-500/10 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 dark:border-white/10 dark:bg-white/5 dark:hover:border-cyan-500/40"
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-cyan-600 dark:bg-slate-950/50 dark:text-cyan-400">
+          <ScrollText className="h-5 w-5" />
+        </div>
+        <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
+          Locked
+        </span>
+      </div>
+      <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">{title}</h3>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{copy}</p>
+    </button>
+  );
+}
+
+function ProjectColumn({ title, items, tone }) {
+  const toneClass = {
+    green: 'text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/20',
+    amber: 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/20',
+    cyan: 'text-cyan-700 dark:text-cyan-300 bg-cyan-500/10 border-cyan-500/20',
+  }[tone];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/5">
+      <h3 className={`mb-4 rounded-xl border px-4 py-2 text-sm font-bold ${toneClass}`}>{title}</h3>
+      <div className="space-y-3">
+        {items.map((item) => (
+          <div key={item} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300">
+            {item}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
