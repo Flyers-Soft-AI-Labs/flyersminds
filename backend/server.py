@@ -45,6 +45,19 @@ GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
 CURRICULUM_AI_MODEL = os.environ.get('CURRICULUM_AI_MODEL', 'anthropic/claude-sonnet-4-20250514')
 
+MONTH3_UNLOCK_EMAILS = {
+    "pavithradhanasekar17@gmail.com",
+    "prakhyathsaiponduru1122@gmail.com",
+    "chodiboyinameghana@gmail.com",
+    "pavankumarduddi25@gmail.com",
+    "kaviyasivakumar0523@gmail.com",
+    "raghu.patchalla@gmail.com",
+    "raavijagadeesh5@gmail.com",
+    "durgamaheshuppu2005@gmail.com",
+}
+
+MONTH3_GATEWAY_DAYS = range(40, 60)
+
 CHATBOT_SYSTEM_PROMPT = """You are FlyersMind Bot, a Socratic AI tutor for Flyers Minds's 120-day AI/ML internship program based in Chennai, India.
 
 ## YOUR CORE TEACHING PHILOSOPHY
@@ -342,6 +355,36 @@ def create_course_access_token(enrollment_id: str, email: str, course: str) -> s
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+def apply_month3_unlock_override(progress: List[dict], user: dict) -> List[dict]:
+    email = user.get("email", "").lower().strip()
+    if email not in MONTH3_UNLOCK_EMAILS:
+        return progress
+
+    now = datetime.now(timezone.utc).isoformat()
+    by_day = {p.get("day_number"): p for p in progress if p.get("day_number") is not None}
+
+    for day in MONTH3_GATEWAY_DAYS:
+        existing = by_day.get(day)
+        if existing:
+            existing["is_completed"] = True
+            existing["month3_unlock_override"] = True
+            continue
+
+        synthetic = {
+            "id": f"month3-unlock-{user['id']}-{day}",
+            "user_id": user["id"],
+            "day_number": day,
+            "completed_tasks": [],
+            "is_completed": True,
+            "updated_at": now,
+            "month3_unlock_override": True,
+        }
+        progress.append(synthetic)
+        by_day[day] = synthetic
+
+    return progress
+
+
 async def send_email(to_email: str, subject: str, html_content: str) -> bool:
     """Send email via Brevo SMTP API. Returns True on success, raises on hard failure."""
     if not BREVO_API_KEY or not BREVO_SENDER_EMAIL:
@@ -628,7 +671,7 @@ async def get_progress(user=Depends(get_current_user)):
                 )
                 p["is_completed"] = True  # also fix the in-memory copy returned now
 
-    return progress
+    return apply_month3_unlock_override(progress, user)
 
 
 @api_router.post("/progress/complete-task")
