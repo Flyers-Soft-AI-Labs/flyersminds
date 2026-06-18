@@ -183,9 +183,19 @@ export default function DayDetailPage() {
     return p?.is_completed === true;
   };
 
+  const isOverrideUnlocked = (dayNum) => {
+    const allowedMonths = user?.unlock_overrides?.aiml?.months || [];
+    if (allowedMonths.length === 0) return false;
+    const monthEntry = months.find((month) =>
+      month.weeks.some((week) => week.days.includes(dayNum))
+    );
+    return monthEntry ? allowedMonths.includes(monthEntry.id) : false;
+  };
+
   // Access control: next day only unlocks after backend sets is_completed (git required)
   const isDayUnlocked = (dayNum) => {
     if (isAdmin || dayNum === 1) return true;
+    if (isOverrideUnlocked(dayNum)) return true;
     const prev = allProgress.find((p) => p.day_number === dayNum - 1);
     return prev?.is_completed === true;
   };

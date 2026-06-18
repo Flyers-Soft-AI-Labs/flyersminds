@@ -342,6 +342,20 @@ def create_course_access_token(enrollment_id: str, email: str, course: str) -> s
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
+def build_user_payload(user: dict) -> dict:
+    payload = {
+        "id": user["id"],
+        "name": user["name"],
+        "email": user["email"],
+        "role": user["role"],
+    }
+    if "course" in user:
+        payload["course"] = user.get("course")
+    if "unlock_overrides" in user:
+        payload["unlock_overrides"] = user.get("unlock_overrides")
+    return payload
+
+
 async def send_email(to_email: str, subject: str, html_content: str) -> bool:
     """Send email via Brevo SMTP API. Returns True on success, raises on hard failure."""
     if not BREVO_API_KEY or not BREVO_SENDER_EMAIL:
@@ -422,12 +436,7 @@ async def register(data: UserRegister):
     token = create_token(user_id, role)
     return {
         "token": token,
-        "user": {
-            "id": user_id,
-            "name": data.name,
-            "email": email,
-            "role": role
-        }
+        "user": build_user_payload(user_doc)
     }
 
 
@@ -444,12 +453,7 @@ async def login(data: UserLogin):
     token = create_token(user["id"], user["role"])
     return {
         "token": token,
-        "user": {
-            "id": user["id"],
-            "name": user["name"],
-            "email": user["email"],
-            "role": user["role"]
-        }
+        "user": build_user_payload(user)
     }
 
 
@@ -470,12 +474,7 @@ async def admin_login(data: AdminLogin):
     token = create_token(user["id"], user["role"])
     return {
         "token": token,
-        "user": {
-            "id": user["id"],
-            "name": user["name"],
-            "email": user["email"],
-            "role": user["role"]
-        }
+        "user": build_user_payload(user)
     }
 
 
@@ -1481,12 +1480,10 @@ async def verify_course_access(token: str):
     session_token = create_token(user_id, "intern", expires_delta=timedelta(days=7))
     return {
         "token": session_token,
-        "user": {
-            "id": user_for_response["id"],
-            "name": user_for_response["name"],
-            "email": user_for_response["email"],
+        "user": build_user_payload({
+            **user_for_response,
             "role": "intern",
-        }
+        })
     }
 
 

@@ -314,6 +314,13 @@ export default function Dashboard() {
 
   const getDayProgress = (dayNum) => progress.find((p) => p.day_number === dayNum);
 
+  const isOverrideUnlocked = (dayNum) => {
+    const allowedMonths = user?.unlock_overrides?.aiml?.months || [];
+    if (allowedMonths.length === 0) return false;
+    const dayData = curriculum.find((d) => d.day === dayNum);
+    return dayData ? allowedMonths.includes(dayData.month) : false;
+  };
+
   // Display: shows ✓ on day cards — true when all tasks done OR backend confirmed
   const isDayCompleted = (dayNum) => {
     const p = getDayProgress(dayNum);
@@ -327,6 +334,7 @@ export default function Dashboard() {
   const isDayUnlocked = (dayNum) => {
     if (isAdmin) return true;
     if (dayNum === 1) return true;
+    if (isOverrideUnlocked(dayNum)) return true;
     const prev = getDayProgress(dayNum - 1);
     return prev?.is_completed === true;
   };
