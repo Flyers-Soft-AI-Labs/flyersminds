@@ -7,7 +7,6 @@ import Navbar from '../components/Navbar';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import {
-  ChevronLeft,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
@@ -20,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminCurriculumProposalsPage() {
-  const { token, API, user } = useAuth();
+  const { token, API } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('pending');
   const [proposals, setProposals] = useState([]);
