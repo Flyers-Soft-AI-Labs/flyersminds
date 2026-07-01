@@ -211,10 +211,12 @@ export default function ChatBot() {
       if (!isOpen) setUnread((n) => n + 1);
     } catch (err) {
       const detail = err?.response?.data?.detail || '';
+      const detailCode = typeof detail === 'string' ? detail : detail?.code || '';
+      const detailMessage = typeof detail === 'string' ? '' : detail?.message || '';
       let msg = "I'm having a moment — please try again in a few seconds!";
-      if (detail === 'model_not_found') msg = "The AI model isn't available right now. Please try again shortly.";
-      else if (detail === 'auth_error')  msg = "There's a configuration issue on our end. Please contact your mentor.";
-      else if (detail === 'rate_limit')  msg = "I'm getting too many requests right now. Please wait a moment and try again!";
+      if (detailCode === 'model_not_found') msg = detailMessage || "The AI model isn't available right now. Please try again shortly.";
+      else if (detailCode === 'auth_error')  msg = detailMessage || "There's a configuration issue on our end. Please contact your mentor.";
+      else if (detailCode === 'rate_limit')  msg = detailMessage || "I'm getting too many requests right now. Please wait a moment and try again!";
       setMessages((prev) => [...prev, { role: 'assistant', content: msg, id: Date.now().toString() + '_err' }]);
     } finally {
       setLoading(false);

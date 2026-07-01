@@ -27,6 +27,8 @@ export default function AdminCurriculumProposalsPage() {
   const [expandedId, setExpandedId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [reason, setReason] = useState('');
+  const [automationRuns, setAutomationRuns] = useState([]);
+  const [runNowLoading, setRunNowLoading] = useState(false);
 
   const fetchProposals = useCallback(async (status) => {
     setLoading(true);
@@ -43,9 +45,24 @@ export default function AdminCurriculumProposalsPage() {
     }
   }, [API, token]);
 
+  const fetchAutomationRuns = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/admin/curriculum/automation-runs?course_slug=aiml`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAutomationRuns(res.data || []);
+    } catch (err) {
+      setAutomationRuns([]);
+    }
+  }, [API, token]);
+
   useEffect(() => {
     fetchProposals(activeTab);
   }, [activeTab, fetchProposals]);
+
+  useEffect(() => {
+    fetchAutomationRuns();
+  }, [fetchAutomationRuns]);
 
   const handleApprove = async (proposalId) => {
     setActionLoading(proposalId);
@@ -59,6 +76,7 @@ export default function AdminCurriculumProposalsPage() {
       setReason('');
       setExpandedId(null);
       fetchProposals(activeTab);
+      fetchAutomationRuns();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to approve proposal');
     } finally {
@@ -78,6 +96,7 @@ export default function AdminCurriculumProposalsPage() {
       setReason('');
       setExpandedId(null);
       fetchProposals(activeTab);
+      fetchAutomationRuns();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to reject proposal');
     } finally {
@@ -89,6 +108,30 @@ export default function AdminCurriculumProposalsPage() {
     if (!dateStr) return '';
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleRunNow = async () => {
+    setRunNowLoading(true);
+    try {
+      const res = await axios.post(
+        `${API}/admin/curriculum/automation/run-now`,
+        { course_slug: 'aiml' },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.status === 'proposal_created') {
+        toast.success('Monthly AI review created a pending proposal');
+      } else if (res.data.status === 'skipped') {
+        toast.info(res.data.message || 'Monthly review found no meaningful update');
+      } else {
+        toast.success('Monthly review completed');
+      }
+      fetchProposals(activeTab);
+      fetchAutomationRuns();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to run monthly review');
+    } finally {
+      setRunNowLoading(false);
+    }
   };
 
   const statusConfig = {
@@ -115,6 +158,43 @@ export default function AdminCurriculumProposalsPage() {
               <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-white">Curriculum Proposals</h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">Review AI-generated curriculum updates</p>
             </div>
+          </div>
+        </div>
+
+        <div className="mb-8 rounded-2xl border border-slate-300 dark:border-white/5 bg-white dark:bg-slate-900/40 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Monthly AI Review</h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Trigger the same monthly automation manually. It only creates a pending proposal and never publishes directly.
+              </p>
+            </div>
+            <button
+              onClick={handleRunNow}
+              disabled={runNowLoading}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-cyan-500 hover:to-blue-500 disabled:opacity-60 transition-all shadow-md shadow-cyan-500/20"
+            >
+              {runNowLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              Run Monthly Review Now
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {automationRuns.slice(0, 6).map((run) => (
+              <div key={run.id} className="rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/30 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {run.status.replace('_', ' ')}
+                  </span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">
+                    {formatDate(run.started_at)}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm font-medium text-slate-800 dark:text-slate-200">
+                  {run.ai_summary || 'Monthly review recorded'}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -160,6 +240,7 @@ export default function AdminCurriculumProposalsPage() {
                     const cfg = statusConfig[proposal.status] || statusConfig.pending;
                     const Icon = cfg.icon;
                     const dayCount = proposal.proposal_json?.days?.length || 0;
+                    const isMonthlyReview = proposal.automation_run_type === 'monthly' || proposal.created_by === 'system/monthly-automation';
 
                     return (
                       <div
@@ -187,6 +268,11 @@ export default function AdminCurriculumProposalsPage() {
                                 <span className="text-xs text-slate-500 dark:text-slate-400">
                                   {proposal.course_title}
                                 </span>
+                              )}
+                              {isMonthlyReview && (
+                                <Badge className="bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border-cyan-300 dark:border-cyan-500/30">
+                                  Monthly AI Review
+                                </Badge>
                               )}
                             </div>
                             <p className="text-sm font-medium text-slate-900 dark:text-white truncate">

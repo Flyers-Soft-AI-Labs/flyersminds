@@ -129,6 +129,7 @@ export default function Dashboard() {
   const [aiInstruction, setAiInstruction] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [pendingProposalCount, setPendingProposalCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
   // Admin curriculum editing states
   const [curriculumOverrides, setCurriculumOverrides] = useState({});
   const [editingDay, setEditingDay] = useState(null);
@@ -199,10 +200,45 @@ export default function Dashboard() {
     }
   }, [API, token, isAdmin]);
 
+  const fetchNotifications = useCallback(async () => {
+    if (isAdmin) return;
+    try {
+      const res = await axios.get(`${API}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const items = res.data || [];
+      setNotifications(items);
+      const unread = items.filter((item) => !item.is_read);
+      if (unread.length > 0) {
+        toast.info(unread[0].title, {
+          description: unread[0].message,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  }, [API, token, isAdmin]);
+
   useEffect(() => {
     fetchPgCurriculum();
     fetchPendingCount();
-  }, [fetchPgCurriculum, fetchPendingCount]);
+    fetchNotifications();
+  }, [fetchPgCurriculum, fetchPendingCount, fetchNotifications]);
+
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await axios.post(
+        `${API}/notifications/${notificationId}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNotifications((prev) => prev.map((item) => (
+        item.id === notificationId ? { ...item, is_read: true } : item
+      )));
+    } catch (err) {
+      toast.error('Failed to mark notification as read');
+    }
+  };
 
   // AI proposal submission
   const handleAiSubmit = async () => {
@@ -360,6 +396,7 @@ export default function Dashboard() {
 
   const totalCompleted = curriculum.filter((d) => isDayCompleted(d.day)).length;
   const overallPercent = Math.round((totalCompleted / 120) * 100);
+  const unreadNotifications = notifications.filter((item) => !item.is_read);
   const currentStreak = (() => {
     let streak = 0;
     for (let i = 1; i <= 120; i += 1) {
@@ -393,6 +430,30 @@ export default function Dashboard() {
 
   const renderDashboardContent = () => (
     <>
+        {!isAdmin && unreadNotifications.length > 0 && (
+          <div className="mb-6 rounded-2xl border border-cyan-200 dark:border-cyan-500/20 bg-cyan-50 dark:bg-cyan-950/20 p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/20">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Curriculum update available</h3>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                    {unreadNotifications[0].message}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => markNotificationRead(unreadNotifications[0].id)}
+                className="rounded-xl border border-cyan-300 dark:border-cyan-500/30 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/10 transition-colors"
+              >
+                Mark as read
+              </button>
+            </div>
+          </div>
+        )}
+
 
         {/* Check Where You Are — Quiz card (intern only) */}
         {!isAdmin && (

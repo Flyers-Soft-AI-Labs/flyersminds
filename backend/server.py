@@ -16,7 +16,11 @@ import jwt
 import httpx
 import asyncio
 from groq import AsyncGroq
-from curriculum_postgres import create_curriculum_postgres_router
+from curriculum_postgres import (
+    create_curriculum_postgres_router,
+    create_curriculum_postgres_service,
+    should_run_curriculum_automation,
+)
 from postgres import close_postgres_pool, init_postgres_pool
 
 ROOT_DIR = Path(__file__).parent
@@ -43,6 +47,7 @@ ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
 MAX_ADMINS = 10
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+CHATBOT_MODEL = os.environ.get('CHATBOT_MODEL', 'qwen/qwen3-32b')
 CURRICULUM_AI_MODEL = os.environ.get('CURRICULUM_AI_MODEL', 'anthropic/claude-sonnet-4-20250514')
 
 MONTH3_UNLOCK_EMAILS = {
@@ -134,6 +139,10 @@ BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
 BREVO_SENDER_EMAIL = os.environ.get('BREVO_SENDER_EMAIL', '')
 FROM_NAME = os.environ.get('FROM_NAME', 'Flyers Minds')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+CURRICULUM_AUTOMATION_ENABLED = os.environ.get('CURRICULUM_AUTOMATION_ENABLED', 'false').lower() == 'true'
+CURRICULUM_AUTOMATION_COURSE_SLUG = os.environ.get('CURRICULUM_AUTOMATION_COURSE_SLUG', 'aiml')
+CURRICULUM_AUTOMATION_DAY = int(os.environ.get('CURRICULUM_AUTOMATION_DAY', '1'))
+CURRICULUM_AUTOMATION_HOUR = int(os.environ.get('CURRICULUM_AUTOMATION_HOUR', '2'))
 
 
 app = FastAPI()
@@ -149,6 +158,7 @@ app.add_middleware(
 
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer(auto_error=False)
+curriculum_automation_task: Optional[asyncio.Task] = None
 
 
 class UserRegister(BaseModel):
@@ -432,6 +442,38 @@ async def send_email(to_email: str, subject: str, html_content: str) -> bool:
     except Exception as e:
         logger.error(f"Unexpected error sending email to {to_email}: {e}")
         return False
+
+
+async def list_course_notification_user_ids(course_slug: str) -> List[str]:
+    query = {"role": "intern"}
+    if course_slug == "aiml":
+        query["$or"] = [{"course": "aiml"}, {"course": {"$exists": False}}, {"course": None}]
+    else:
+        query["course"] = course_slug
+
+    users = await db.users.find(query, {"_id": 0, "id": 1}).to_list(5000)
+    return [entry["id"] for entry in users if entry.get("id")]
+
+
+curriculum_service = create_curriculum_postgres_service(
+    openrouter_api_key=OPENROUTER_API_KEY,
+    curriculum_ai_model=CURRICULUM_AI_MODEL,
+    list_course_user_ids=list_course_notification_user_ids,
+)
+
+
+async def run_curriculum_automation_scheduler():
+    while True:
+        try:
+            now = datetime.now(timezone.utc)
+            if should_run_curriculum_automation(now, CURRICULUM_AUTOMATION_DAY, CURRICULUM_AUTOMATION_HOUR):
+                await curriculum_service.run_monthly_review(CURRICULUM_AUTOMATION_COURSE_SLUG)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Monthly curriculum automation failed")
+
+        await asyncio.sleep(3600)
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -932,40 +974,62 @@ async def get_user_snippets(user_id: str, user=Depends(get_current_user)):
 @api_router.post("/chat")
 async def chat(data: ChatRequest, user=Depends(get_current_user)):
     if not GROQ_API_KEY:
-        raise HTTPException(status_code=500, detail="Chatbot not configured")
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "auth_error", "message": "Groq API key is missing."},
+        )
+
+    messages = [{"role": "system", "content": CHATBOT_SYSTEM_PROMPT}]
+    for msg in data.history[-10:]:
+        messages.append({"role": msg.role, "content": msg.content})
+    messages.append({"role": "user", "content": data.message})
 
     try:
         groq_client = AsyncGroq(api_key=GROQ_API_KEY)
-
-        messages = [{"role": "system", "content": CHATBOT_SYSTEM_PROMPT}]
-
-        for msg in data.history[-10:]:
-            messages.append({"role": msg.role, "content": msg.content})
-
-        messages.append({"role": "user", "content": data.message})
-
         completion = await groq_client.chat.completions.create(
-            model="moonshotai/kimi-k2-instruct-0905",
+            model=CHATBOT_MODEL,
             messages=messages,
-            max_tokens=1024,
-            temperature=0.7,
+            max_tokens=2048,
+            temperature=0.4,
         )
-
         reply = completion.choices[0].message.content
+        if isinstance(reply, list):
+            reply = "".join(
+                part.get("text", "") for part in reply if isinstance(part, dict)
+            )
+        if not reply:
+            raise HTTPException(
+                status_code=502,
+                detail={"code": "service_error", "message": "The AI service returned an empty response."},
+            )
         return {"reply": reply}
 
+    except HTTPException:
+        raise
     except Exception as e:
         error_msg = str(e)
         logger.error(f"Groq chat error: {error_msg}")
 
-        if "model" in error_msg.lower() or "404" in error_msg:
-            raise HTTPException(status_code=502, detail="model_not_found")
-        elif "auth" in error_msg.lower() or "api key" in error_msg.lower() or "401" in error_msg:
-            raise HTTPException(status_code=502, detail="auth_error")
-        elif "rate" in error_msg.lower() or "429" in error_msg:
-            raise HTTPException(status_code=502, detail="rate_limit")
-        else:
-            raise HTTPException(status_code=502, detail="service_error")
+        lowered = error_msg.lower()
+        if "authentication" in lowered or "api key" in lowered or "401" in lowered or "unauthorized" in lowered:
+            raise HTTPException(
+                status_code=502,
+                detail={"code": "auth_error", "message": "Groq API key is invalid."},
+            )
+        if "rate" in lowered or "429" in lowered or "too many requests" in lowered:
+            raise HTTPException(
+                status_code=502,
+                detail={"code": "rate_limit", "message": "AI model is rate limited. Try again later."},
+            )
+        if "qwen/qwen3-32b" in lowered or "model" in lowered or "404" in lowered or "not found" in lowered:
+            raise HTTPException(
+                status_code=502,
+                detail={"code": "model_not_found", "message": "Qwen3 32B is unavailable on Groq right now."},
+            )
+        raise HTTPException(
+            status_code=502,
+            detail={"code": "service_error", "message": "The chatbot service is unavailable right now."},
+        )
 
 
 @api_router.get("/curriculum/overrides")
@@ -1557,6 +1621,9 @@ async def startup():
         await init_postgres_pool()
     except Exception as exc:
         print(f"PostgreSQL curriculum connection failed: {exc}")
+    global curriculum_automation_task
+    if CURRICULUM_AUTOMATION_ENABLED:
+        curriculum_automation_task = asyncio.create_task(run_curriculum_automation_scheduler())
     print("\n" + "="*60)
     print("🚀 FLYERS MINDS API STARTING")
     print("="*60)
@@ -1575,8 +1642,7 @@ async def startup():
 
 api_router.include_router(create_curriculum_postgres_router(
     get_current_user,
-    openrouter_api_key=OPENROUTER_API_KEY,
-    curriculum_ai_model=CURRICULUM_AI_MODEL,
+    curriculum_service,
 ))
 app.include_router(api_router)
 
@@ -1589,6 +1655,14 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    global curriculum_automation_task
+    if curriculum_automation_task:
+        curriculum_automation_task.cancel()
+        try:
+            await curriculum_automation_task
+        except asyncio.CancelledError:
+            pass
+        curriculum_automation_task = None
     client.close()
     await close_postgres_pool()
 

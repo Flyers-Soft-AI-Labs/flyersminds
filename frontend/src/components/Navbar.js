@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../App';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon, Settings, LayoutDashboard, Info, Sparkles } from 'lucide-react';
+import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon, Settings, LayoutDashboard, Info, Sparkles, Bell } from 'lucide-react';
 import axios from 'axios';
 
 export default function Navbar() {
@@ -13,12 +13,21 @@ export default function Navbar() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     if (user?.role === 'admin' && token && API) {
       axios.get(`${API}/admin/pg-curriculum/proposals/pending-count`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then((res) => setPendingCount(res.data.count || 0)).catch(() => {});
+    }
+    if (user?.role === 'intern' && token && API) {
+      axios.get(`${API}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((res) => {
+        const unread = (res.data || []).filter((item) => !item.is_read);
+        setNotificationCount(unread.length);
+      }).catch(() => {});
     }
   }, [user, token, API]);
 
@@ -99,6 +108,21 @@ export default function Navbar() {
             >
               <Info className="h-4 w-4" />
             </button>
+
+            {user?.role === 'intern' && (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 transition-colors hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {notificationCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                    {notificationCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             <button
               onClick={() => setShowHelpModal(true)}
