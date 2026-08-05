@@ -1,18 +1,47 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../App';
 import { useTheme } from '../context/ThemeContext';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon, Settings, LayoutDashboard, Info, Sparkles } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 export default function Navbar() {
   const { user, logout, token, API } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [openingStudio, setOpeningStudio] = useState(false);
+
+  const openStudio = async () => {
+    if (!token) {
+      toast.error('Please log in before opening Studio.');
+      return;
+    }
+
+    setOpeningStudio(true);
+    try {
+      const dayMatch = location.pathname.match(/^\/dashboard\/day\/(\d+)$/);
+      const context = dayMatch ? { day_number: Number(dayMatch[1]) } : {};
+      const response = await axios.post(
+        `${API}/auth/studio-token`,
+        context,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const studioUrl = process.env.REACT_APP_STUDIO_URL || 'http://localhost:3001';
+      const entryUrl = new URL('/studio/entry', studioUrl);
+      entryUrl.searchParams.set('token', response.data.token);
+      window.location.assign(entryUrl.toString());
+    } catch (error) {
+      const message = error.response?.data?.detail;
+      toast.error(message || 'Unable to open Studio. Please try again.');
+      setOpeningStudio(false);
+    }
+  };
 
   useEffect(() => {
     if (user?.role === 'admin' && token && API) {
@@ -59,6 +88,17 @@ export default function Navbar() {
 
           {/* Logo Section */}
           <div className="flex items-center gap-3">
+            {user && (
+              <button
+                onClick={openStudio}
+                disabled={openingStudio}
+                title="Open AI Studio"
+                className="flex items-center gap-2 rounded-xl border border-violet-200 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 px-2 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider text-violet-700 dark:text-violet-300 transition-all hover:bg-violet-100 dark:hover:bg-violet-500/20 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden sm:inline">{openingStudio ? 'Opening…' : 'Open Studio'}</span>
+              </button>
+            )}
             <div className="relative group cursor-pointer">
               <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-purple-500 to-purple-700 opacity-30 blur group-hover:opacity-60 transition duration-300"></div>
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-md">

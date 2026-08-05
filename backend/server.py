@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -18,27 +18,38 @@ import asyncio
 from groq import AsyncGroq
 from curriculum_postgres import create_curriculum_postgres_router
 from postgres import close_postgres_pool, init_postgres_pool
+from local_store import LocalDatabase
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
-mongo_client_kwargs = {}
-if mongo_url.startswith("mongodb+srv://"):
-    mongo_client_kwargs = {
-        "tls": True,
-        "tlsCAFile": certifi.where(),
-        "tlsAllowInvalidCertificates": True,
-        "serverSelectionTimeoutMS": 30000,
-        "connectTimeoutMS": 30000,
-        "socketTimeoutMS": 30000,
-    }
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://127.0.0.1:27017')
+use_local_store = os.environ.get('USE_LOCAL_STORE', 'true').lower() in {'1', 'true', 'yes', 'on'}
 
-client = AsyncIOMotorClient(mongo_url, **mongo_client_kwargs)
-db = client[os.environ['DB_NAME']]
+if use_local_store:
+    db = LocalDatabase(ROOT_DIR / 'local_store.json')
+else:
+    mongo_client_kwargs = {}
+    if mongo_url.startswith("mongodb+srv://"):
+        mongo_client_kwargs = {
+            "tls": True,
+            "tlsCAFile": certifi.where(),
+            "tlsAllowInvalidCertificates": True,
+            "serverSelectionTimeoutMS": 30000,
+            "connectTimeoutMS": 30000,
+            "socketTimeoutMS": 30000,
+        }
+
+    try:
+        client = AsyncIOMotorClient(mongo_url, **mongo_client_kwargs)
+        db = client[os.environ.get('DB_NAME', 'flyersminds')]
+        asyncio.get_event_loop().run_until_complete(db.list_collection_names())
+    except Exception:
+        db = LocalDatabase(ROOT_DIR / 'local_store.json')
 
 JWT_SECRET = os.environ.get('JWT_SECRET', 'flyerssoft-learn-secret-2024-xk9p')
 JWT_ALGORITHM = "HS256"
+STUDIO_JWT_SECRET = os.environ.get('STUDIO_JWT_SECRET')
 ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
 MAX_ADMINS = 10
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
@@ -142,7 +153,14 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["http://localhost:3000", "http://localhost", "127.0.0.1", "*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1",
+    ],
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -208,6 +226,11 @@ class UpdatePassword(BaseModel):
 
 class UpdateAvatar(BaseModel):
     avatar: str  # base64 data URL
+
+
+class StudioTokenRequest(BaseModel):
+    day_number: Optional[int] = None
+    topic: Optional[str] = None
 
 
 class CurriculumOverride(BaseModel):
@@ -494,6 +517,31 @@ async def login(data: UserLogin):
             "role": user["role"]
         }
     }
+
+
+@api_router.post("/auth/studio-token")
+async def create_studio_token(
+    response: Response,
+    data: StudioTokenRequest = StudioTokenRequest(),
+    user=Depends(get_current_user),
+):
+    if not STUDIO_JWT_SECRET:
+        raise HTTPException(status_code=500, detail="Studio JWT secret is not configured")
+
+    payload = {
+        "user_id": user["id"],
+        "email": user["email"],
+        "course": user.get("course"),
+        "day": data.day_number if data.day_number is not None else user.get("current_day"),
+        "topic": data.topic,
+        "aud": "studio",
+        "iat": datetime.now(timezone.utc),
+        "jti": str(uuid.uuid4()),
+        "exp": datetime.now(timezone.utc) + timedelta(seconds=60),
+    }
+    token = jwt.encode(payload, STUDIO_JWT_SECRET, algorithm=JWT_ALGORITHM)
+    response.headers["Cache-Control"] = "no-store"
+    return {"token": token}
 
 
 @api_router.post("/auth/admin-login")
