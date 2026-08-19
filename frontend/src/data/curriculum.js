@@ -49,3 +49,9 @@ export const months = [
 export function getDayData(dayNumber) {
   return curriculum.find(d => d.day === dayNumber);
 }
+
+export function getMonthForDay(dayNumber) {
+  return months.find((month) =>
+    month.weeks.some((week) => week.days.includes(dayNumber))
+  ) || null;
+}

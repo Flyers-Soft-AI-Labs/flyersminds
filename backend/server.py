@@ -21,7 +21,7 @@ from curriculum_postgres import (
     create_curriculum_postgres_service,
     should_run_curriculum_automation,
 )
-from postgres import close_postgres_pool, init_postgres_pool
+from postgres import close_postgres_pool, get_postgres_pool, init_postgres_pool
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -201,9 +201,21 @@ class ChatMessage(BaseModel):
     reasoning_details: Optional[List] = None
 
 
+class AIContext(BaseModel):
+    context_version: str = "1.0"
+    user_id: str
+    course_id: str
+    module_id: str
+    topic_id: str
+    current_activity: Optional[str] = None
+    room_id: Optional[str] = None
+    session_id: Optional[str] = None
+
+
 class ChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = []
+    ai_context: AIContext
 
 
 class UpdateEmail(BaseModel):
@@ -460,6 +472,92 @@ curriculum_service = create_curriculum_postgres_service(
     curriculum_ai_model=CURRICULUM_AI_MODEL,
     list_course_user_ids=list_course_notification_user_ids,
 )
+
+
+async def resolve_ai_context(ai_context: AIContext) -> dict:
+    resolved = {
+        "course_id": ai_context.course_id,
+        "module_id": ai_context.module_id,
+        "topic_id": ai_context.topic_id,
+        "current_activity": ai_context.current_activity or "chat",
+        "room_id": ai_context.room_id,
+        "session_id": ai_context.session_id,
+    }
+
+    day_match = ai_context.topic_id.strip().lower()
+    if not day_match.startswith("day-"):
+        return resolved
+
+    try:
+        day_number = int(day_match.split("-", 1)[1])
+    except (IndexError, ValueError):
+        return resolved
+
+    try:
+        pool = get_postgres_pool()
+    except RuntimeError:
+        return resolved
+
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT d.day_number, d.month_number, d.week_number, d.topic, d.month_title, d.week_title
+            FROM curriculum_days d
+            JOIN curriculum_versions v ON v.id = d.version_id
+            JOIN courses c ON c.id = v.course_id
+            WHERE c.slug = $1 AND v.status = 'published' AND d.day_number = $2
+            ORDER BY v.version_number DESC
+            LIMIT 1
+            """,
+            ai_context.course_id,
+            day_number,
+        )
+
+    if not row:
+        return resolved
+
+    resolved.update(
+        {
+            "day_number": row["day_number"],
+            "month_number": row["month_number"],
+            "week_number": row["week_number"],
+            "topic_title": row["topic"],
+            "month_title": row["month_title"],
+            "week_title": row["week_title"],
+        }
+    )
+    return resolved
+
+
+def build_chat_context_note(ai_context: AIContext, resolved_context: dict) -> str:
+    lines = [
+        "AI context for the current learner request:",
+        f"- user_id: {ai_context.user_id}",
+        f"- course_id: {resolved_context['course_id']}",
+        f"- module_id: {resolved_context['module_id']}",
+        f"- topic_id: {resolved_context['topic_id']}",
+        f"- current_activity: {resolved_context['current_activity']}",
+    ]
+
+    if resolved_context.get("day_number") is not None:
+        lines.append(f"- day_number: {resolved_context['day_number']}")
+    if resolved_context.get("month_number") is not None:
+        lines.append(f"- month_number: {resolved_context['month_number']}")
+    if resolved_context.get("week_number") is not None:
+        lines.append(f"- week_number: {resolved_context['week_number']}")
+    if resolved_context.get("month_title"):
+        lines.append(f"- month_title: {resolved_context['month_title']}")
+    if resolved_context.get("week_title"):
+        lines.append(f"- week_title: {resolved_context['week_title']}")
+    if resolved_context.get("topic_title"):
+        lines.append(f"- topic_title: {resolved_context['topic_title']}")
+    if resolved_context.get("room_id"):
+        lines.append(f"- room_id: {resolved_context['room_id']}")
+    if resolved_context.get("session_id"):
+        lines.append(f"- session_id: {resolved_context['session_id']}")
+
+    lines.append("Use this context to keep the learner anchored to the correct course, module, and topic.")
+    return "\n".join(lines)
 
 
 async def run_curriculum_automation_scheduler():
@@ -979,7 +1077,24 @@ async def chat(data: ChatRequest, user=Depends(get_current_user)):
             detail={"code": "auth_error", "message": "Groq API key is missing."},
         )
 
+    if data.ai_context.user_id != user["id"]:
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "invalid_context", "message": "AI context user_id does not match the authenticated user."},
+        )
+
+    if user.get("role") == "intern":
+        user_course = user.get("course") or "aiml"
+        if data.ai_context.course_id != user_course:
+            raise HTTPException(
+                status_code=403,
+                detail={"code": "invalid_context", "message": "AI context course_id does not match the learner's active course."},
+            )
+
+    resolved_context = await resolve_ai_context(data.ai_context)
+
     messages = [{"role": "system", "content": CHATBOT_SYSTEM_PROMPT}]
+    messages.append({"role": "system", "content": build_chat_context_note(data.ai_context, resolved_context)})
     for msg in data.history[-10:]:
         messages.append({"role": msg.role, "content": msg.content})
     messages.append({"role": "user", "content": data.message})

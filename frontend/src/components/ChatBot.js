@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../App';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { X, Send, MessageCircle, Bot, Trash2, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
+import { getMonthForDay } from '../data/curriculum';
 
 const WELCOME_MESSAGE = {
   role: 'assistant',
@@ -20,6 +22,51 @@ function getDefaultPos(w, h) {
   return {
     x: Math.max(8, window.innerWidth - w - 24),
     y: Math.max(8, window.innerHeight - h - 96),
+  };
+}
+
+function buildAIContext(pathname, user) {
+  const courseId = user?.course || 'aiml';
+  const dayMatch = pathname.match(/^\/dashboard\/day\/(\d+)$/);
+
+  if (dayMatch) {
+    const dayNumber = parseInt(dayMatch[1], 10);
+    const month = getMonthForDay(dayNumber);
+    return {
+      context_version: '1.0',
+      user_id: user.id,
+      course_id: courseId,
+      module_id: month ? `month-${month.id}` : 'course-overview',
+      topic_id: `day-${dayNumber}`,
+      current_activity: 'chat',
+      room_id: null,
+      session_id: null,
+    };
+  }
+
+  const routeContextMap = {
+    '/dashboard': { module_id: 'course-overview', topic_id: 'dashboard-overview' },
+    '/quiz': { module_id: 'assessment', topic_id: 'quiz-overview' },
+    '/profile': { module_id: 'learner-profile', topic_id: 'profile-overview' },
+    '/settings': { module_id: 'learner-settings', topic_id: 'settings-overview' },
+    '/admin': { module_id: 'admin-console', topic_id: 'admin-overview' },
+    '/admin/curriculum-proposals': { module_id: 'admin-curriculum', topic_id: 'proposal-review' },
+  };
+
+  const routeContext = routeContextMap[pathname] || {
+    module_id: 'course-overview',
+    topic_id: 'general-chat',
+  };
+
+  return {
+    context_version: '1.0',
+    user_id: user.id,
+    course_id: courseId,
+    module_id: routeContext.module_id,
+    topic_id: routeContext.topic_id,
+    current_activity: 'chat',
+    room_id: null,
+    session_id: null,
   };
 }
 
@@ -72,6 +119,7 @@ function renderContent(text) {
 // ── Component ────────────────────────────────────────────────────────────────
 export default function ChatBot() {
   const { token, user, API } = useAuth();
+  const location = useLocation();
 
   const [isOpen, setIsOpen]       = useState(false);
   const [isMaximised, setIsMaximised] = useState(false);
@@ -199,13 +247,18 @@ export default function ChatBot() {
 
     const userMsg = { role: 'user', content: trimmed, id: Date.now().toString() };
     const history = messages.filter((m) => m.id !== 'welcome').map(({ role, content }) => ({ role, content }));
+    const aiContext = buildAIContext(location.pathname, user);
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API}/chat`, { message: trimmed, history }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(
+        `${API}/chat`,
+        { message: trimmed, history, ai_context: aiContext },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       const botMsg = { role: 'assistant', content: res.data.reply, id: Date.now().toString() + '_bot' };
       setMessages((prev) => [...prev, botMsg]);
       if (!isOpen) setUnread((n) => n + 1);
