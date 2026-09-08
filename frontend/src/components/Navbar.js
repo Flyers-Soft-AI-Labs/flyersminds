@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { HelpCircle, User, LogOut, X, Mail, Zap, Sun, Moon, Settings, LayoutDashboard, Info, Sparkles } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { buildStudioEntryUrl } from '../config/studio';
 
 export default function Navbar() {
   const { user, logout, token, API } = useAuth();
@@ -32,10 +33,7 @@ export default function Navbar() {
         context,
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      const studioUrl = process.env.REACT_APP_STUDIO_URL || 'http://localhost:3001';
-      const entryUrl = new URL('/studio/entry', studioUrl);
-      entryUrl.searchParams.set('token', response.data.token);
-      window.location.assign(entryUrl.toString());
+      window.location.assign(buildStudioEntryUrl(response.data.token));
     } catch (error) {
       const message = error.response?.data?.detail;
       toast.error(message || 'Unable to open Studio. Please try again.');

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import Navbar from '../components/Navbar';
 import MultiCodeEditor from '../components/MultiCodeEditor';
 import { months as staticMonths, curriculum as staticCurriculum } from '../data/curriculum';
+import { buildStudioEntryUrl } from '../config/studio';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
@@ -373,10 +374,7 @@ export default function Dashboard() {
         { day_number: currentDay },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      const studioUrl = process.env.REACT_APP_STUDIO_URL || 'http://localhost:3001';
-      const entryUrl = new URL('/studio/entry', studioUrl);
-      entryUrl.searchParams.set('token', response.data.token);
-      window.location.assign(entryUrl.toString());
+      window.location.assign(buildStudioEntryUrl(response.data.token));
     } catch (error) {
       const message = error.response?.data?.detail;
       toast.error(message || 'Unable to open Flyers Studio. Please try again.');

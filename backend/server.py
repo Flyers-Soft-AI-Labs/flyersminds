@@ -50,6 +50,7 @@ else:
 JWT_SECRET = os.environ.get('JWT_SECRET', 'flyerssoft-learn-secret-2024-xk9p')
 JWT_ALGORITHM = "HS256"
 STUDIO_JWT_SECRET = os.environ.get('STUDIO_JWT_SECRET')
+STUDIO_TOKEN_TTL_SECONDS = int(os.environ.get('STUDIO_TOKEN_TTL_SECONDS', '180'))
 ADMIN_CODE = os.environ.get('ADMIN_CODE', 'FLYERSADMIN2024')
 MAX_ADMINS = 10
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
@@ -537,7 +538,10 @@ async def create_studio_token(
         "aud": "studio",
         "iat": datetime.now(timezone.utc),
         "jti": str(uuid.uuid4()),
-        "exp": datetime.now(timezone.utc) + timedelta(seconds=60),
+        # Studio runs on a free Render instance that spins down when idle and can
+        # take 50s+ to wake. A 60s window expires mid-redirect on a cold start, so
+        # allow 3 minutes. Keep this as short as cold starts permit.
+        "exp": datetime.now(timezone.utc) + timedelta(seconds=STUDIO_TOKEN_TTL_SECONDS),
     }
     token = jwt.encode(payload, STUDIO_JWT_SECRET, algorithm=JWT_ALGORITHM)
     response.headers["Cache-Control"] = "no-store"
