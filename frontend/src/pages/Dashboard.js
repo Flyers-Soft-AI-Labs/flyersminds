@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import Navbar from '../components/Navbar';
 import MultiCodeEditor from '../components/MultiCodeEditor';
 import { months as staticMonths, curriculum as staticCurriculum } from '../data/curriculum';
+import { buildStudioEntryUrl } from '../config/studio';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
@@ -97,6 +98,7 @@ const AVAILABLE_COURSES = [
 const DASHBOARD_NAV_ITEMS = [
   { id: 'search', label: 'Search Engine', Icon: Search },
   { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { id: 'studio', label: 'Flyers Studio', Icon: Sparkles },
   { id: 'courses', label: 'Courses', Icon: BookOpen },
   { id: 'achievements', label: 'Achievements', Icon: Award },
   { id: 'certificates', label: 'Certificates', Icon: ScrollText },
@@ -135,6 +137,7 @@ export default function Dashboard() {
   const [editTopic, setEditTopic] = useState('');
   const [editVideos, setEditVideos] = useState([]);
   const [editSaving, setEditSaving] = useState(false);
+  const [openingStudio, setOpeningStudio] = useState(false);
 
   const openCourseBrowser = () => {
     setAdminSelectedCategory(null);
@@ -363,12 +366,33 @@ export default function Dashboard() {
 
   const currentDay = currentStreak + 1 > 120 ? 120 : currentStreak + 1;
 
+  const openFlyersStudio = async () => {
+    setOpeningStudio(true);
+    try {
+      const response = await axios.post(
+        `${API}/auth/studio-token`,
+        { day_number: currentDay },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      window.location.assign(buildStudioEntryUrl(response.data.token));
+    } catch (error) {
+      const message = error.response?.data?.detail;
+      toast.error(message || 'Unable to open Flyers Studio. Please try again.');
+      setOpeningStudio(false);
+    }
+  };
+
   const normalizedCourseQuery = courseQuery.trim().toLowerCase();
   const matchedCourse = normalizedCourseQuery
     ? AVAILABLE_COURSES.find((course) => course.name.toLowerCase() === normalizedCourseQuery)
     : null;
 
   const handleSectionChange = (sectionId) => {
+    if (sectionId === 'studio') {
+      setMobileNavOpen(false);
+      openFlyersStudio();
+      return;
+    }
     setActiveSection(sectionId);
     if (sectionId !== 'courses') setSelectedModule(null);
     setMobileNavOpen(false);
@@ -385,6 +409,32 @@ export default function Dashboard() {
 
   const renderDashboardContent = () => (
     <>
+        <section className="relative mb-8 overflow-hidden rounded-2xl border border-violet-300 bg-gradient-to-r from-violet-100 via-fuchsia-50 to-cyan-50 p-6 shadow-md dark:border-violet-500/30 dark:from-violet-950/60 dark:via-fuchsia-950/30 dark:to-cyan-950/40">
+          <div className="absolute -right-12 -top-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30">
+              <Sparkles className="h-7 w-7" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-white">Flyers Studio</h2>
+                <Badge className="border-violet-400/40 bg-violet-500/15 text-violet-700 dark:text-violet-300">AI Classroom</Badge>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                Create AI-powered classroom content using your FlyersMinds account. No second login required.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openFlyersStudio}
+              disabled={openingStudio}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-violet-500/25 transition hover:from-violet-500 hover:to-fuchsia-500 disabled:cursor-wait disabled:opacity-60"
+            >
+              {openingStudio ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+              {openingStudio ? 'Opening Studio…' : 'Open Flyers Studio'}
+            </button>
+          </div>
+        </section>
 
         {/* Check Where You Are — Quiz card (intern only) */}
         {!isAdmin && (
