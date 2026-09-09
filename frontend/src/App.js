@@ -31,17 +31,54 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000/api';
+  const configuredApi = process.env.REACT_APP_BACKEND_URL?.trim();
+  const API = (configuredApi || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8000/api')).replace(/\/$/, '');
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+
+    const restoreSession = async () => {
+      if (!storedToken || !storedUser) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API}/auth/me`, {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        });
+
+        if (response.ok) {
+          const currentUser = await response.json();
+          setToken(storedToken);
+          setUser(currentUser);
+          localStorage.setItem('user', JSON.stringify(currentUser));
+        } else if (response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+        } else {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        }
+      } catch {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    restoreSession();
+  }, [API]);
+
+  useEffect(() => {
+    if (!token) {
+      setUser(null);
     }
-    setIsLoading(false);
-  }, []);
+  }, [token]);
 
   const login = (newToken, newUser) => {
     localStorage.setItem('token', newToken);
