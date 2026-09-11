@@ -31,6 +31,7 @@ use_local_store = (
     if use_local_store_value is not None
     else configured_mongo_url is None
 )
+client = None
 
 if use_local_store:
     db = LocalDatabase(ROOT_DIR / 'local_store.json')
@@ -46,14 +47,8 @@ else:
             "socketTimeoutMS": 30000,
         }
 
-    try:
-        client = AsyncIOMotorClient(mongo_url, **mongo_client_kwargs)
-        db = client[os.environ.get('DB_NAME', 'flyersminds')]
-        asyncio.get_event_loop().run_until_complete(db.list_collection_names())
-    except Exception as exc:
-        raise RuntimeError(
-            'Configured MongoDB is unavailable. Refusing to use temporary local storage.'
-        ) from exc
+    client = AsyncIOMotorClient(mongo_url, **mongo_client_kwargs)
+    db = client[os.environ.get('DB_NAME', 'flyersminds')]
 
 JWT_SECRET = os.environ.get('JWT_SECRET', 'flyerssoft-learn-secret-2024-xk9p')
 JWT_ALGORITHM = "HS256"
@@ -1621,6 +1616,13 @@ async def root():
 
 @app.on_event("startup")
 async def startup():
+    if not use_local_store:
+        try:
+            await db.command('ping')
+        except Exception as exc:
+            raise RuntimeError(
+                'Configured MongoDB is unavailable. Refusing to use temporary local storage.'
+            ) from exc
     try:
         await init_postgres_pool()
     except Exception as exc:
@@ -1657,7 +1659,8 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    if client is not None:
+        client.close()
     await close_postgres_pool()
 
 
