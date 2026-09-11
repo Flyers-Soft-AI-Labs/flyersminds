@@ -146,6 +146,11 @@ BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
 BREVO_SENDER_EMAIL = os.environ.get('BREVO_SENDER_EMAIL', '')
 FROM_NAME = os.environ.get('FROM_NAME', 'Flyers Minds')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+frontend_origins = {
+    FRONTEND_URL.rstrip('/'),
+    "https://flyersminds.com",
+    "https://www.flyersminds.com",
+}
 
 
 app = FastAPI()
@@ -154,14 +159,14 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=[
+    allow_origins=list(frontend_origins | {
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
         "http://127.0.0.1",
-    ],
+    }),
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
