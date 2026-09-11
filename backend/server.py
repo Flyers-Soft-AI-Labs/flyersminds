@@ -50,8 +50,10 @@ else:
         client = AsyncIOMotorClient(mongo_url, **mongo_client_kwargs)
         db = client[os.environ.get('DB_NAME', 'flyersminds')]
         asyncio.get_event_loop().run_until_complete(db.list_collection_names())
-    except Exception:
-        db = LocalDatabase(ROOT_DIR / 'local_store.json')
+    except Exception as exc:
+        raise RuntimeError(
+            'Configured MongoDB is unavailable. Refusing to use temporary local storage.'
+        ) from exc
 
 JWT_SECRET = os.environ.get('JWT_SECRET', 'flyerssoft-learn-secret-2024-xk9p')
 JWT_ALGORITHM = "HS256"
