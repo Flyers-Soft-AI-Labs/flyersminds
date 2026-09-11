@@ -23,8 +23,14 @@ from local_store import LocalDatabase
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ.get('MONGO_URL', 'mongodb://127.0.0.1:27017')
-use_local_store = os.environ.get('USE_LOCAL_STORE', 'true').lower() in {'1', 'true', 'yes', 'on'}
+configured_mongo_url = os.environ.get('MONGO_URL')
+mongo_url = configured_mongo_url or 'mongodb://127.0.0.1:27017'
+use_local_store_value = os.environ.get('USE_LOCAL_STORE')
+use_local_store = (
+    use_local_store_value.lower() in {'1', 'true', 'yes', 'on'}
+    if use_local_store_value is not None
+    else configured_mongo_url is None
+)
 
 if use_local_store:
     db = LocalDatabase(ROOT_DIR / 'local_store.json')
